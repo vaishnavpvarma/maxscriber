@@ -1,0 +1,6 @@
+pdfplumber
+openpyxl
+pandas
+fuzzywuzzy
+python-Levenshtein
+matplotlib
