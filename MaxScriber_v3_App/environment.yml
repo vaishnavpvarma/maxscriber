@@ -1,0 +1,15 @@
+name: maxscriber-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.10
+  - pip
+  - typer
+  - sqlalchemy
+  - polars
+  - pandas
+  - rpy2
+  - sqlite
+  - pip:
+    - -e .
