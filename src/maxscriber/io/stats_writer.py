@@ -10,7 +10,7 @@ from typing import Dict, List
 from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 
-from maxscriber.constants import CLINICAL_THRESHOLDS
+from maxscriber.config import CLINICAL_THRESHOLDS
 
 
 def generate_condensed_stats(

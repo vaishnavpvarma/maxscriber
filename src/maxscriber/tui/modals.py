@@ -6,7 +6,7 @@ from textual.containers import Vertical, Horizontal
 from textual.widgets import Label, Input, Button, Static, ProgressBar
 from rich.syntax import Syntax
 
-from maxscriber.schema_manager import SchemaManager
+from maxscriber.core.schema import SchemaManager
 
 class WorkspaceLoaderModal(ModalScreen):
     """Command palette to load a workspace."""

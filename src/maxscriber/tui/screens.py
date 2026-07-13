@@ -17,7 +17,7 @@ from maxscriber.tui.modals import (
     WorkspaceLoaderModal, RecordInspectorModal, ExecutePipelineModal, 
     SchemaWizardModal, ConfigModal
 )
-from maxscriber.schema_manager import SchemaManager
+from maxscriber.core.schema import SchemaManager
 
 class MainScreen(Screen):
     """The main Sci-Fi dashboard."""
@@ -154,6 +154,9 @@ class MainScreen(Screen):
     # EVENT BINDINGS
     # =========================================================================
     
+    def action_quit(self) -> None:
+        self.app.exit()
+        
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn_nav_schemas":
             self._load_schema_registry()
@@ -219,7 +222,7 @@ class MainScreen(Screen):
     @work(exclusive=True, thread=True)
     def run_pipeline_worker(self, in_dir: Path, out_dir: Path):
         """Runs extraction pipeline and posts real-time telemetry."""
-        from maxscriber.core import run_transcribe
+        from maxscriber.core.orchestrator import run_transcribe
         
         pdf_files = list(in_dir.glob("*.pdf"))
         total = len(pdf_files)

@@ -19,12 +19,11 @@ class Banner(Static):
         return ASCII_BANNER
 
 class WavyChart(Static):
-    """Simulates a smooth wavy spline area chart using Braille characters."""
+    """Braille-based wavy chart widget."""
     shift_offset = reactive(0)
     
     def __init__(self, color_style: str, **kwargs):
         self.color_style = color_style
-        # Base pattern to scroll
         self.p1 = "  ⡠⠤⢄⡀    ⢀⡠⠤⢄⡀     ⢀⡠⠤⢄⡀    ⢀⡠⠤⢄⡀ " * 3
         self.p2 = "⡠⠊⠉⠉⠉⠑⢄⡠⠊⠉⠉⠉⠑⢄⡠⠊⠉⠉⠉⠑⢄⡠⠊⠉⠉⠉⠑⢄" * 3
         self.p3 = "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿" * 3
@@ -69,7 +68,6 @@ class StatsPanel(Vertical):
 
     def watch_current_throughput(self, val: float) -> None:
         self.lbl_throughput.update(f"{val:.1f}")
-        # Animate chart horizontally based on throughput
         if val > 0:
             self.chart_throughput.shift_offset += int(val)
 

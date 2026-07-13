@@ -82,8 +82,8 @@ def export_stratified_data(stratified_data: dict, latest_data: dict, metadata_ma
     """
     xlsx_path = output_dir / f"{job_name}_mild_mod_severe.xlsx"
     
-    from maxscriber.constants import OUTPUT_COLUMNS
-    from maxscriber.pipeline import determine_tests_done
+    from maxscriber.config import OUTPUT_COLUMNS
+    from maxscriber.core.extraction import determine_tests_done
     
     with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
         for bucket, mids in stratified_data.items():

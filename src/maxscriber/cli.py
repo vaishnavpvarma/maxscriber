@@ -10,7 +10,7 @@ from pathlib import Path
 import logging
 
 from maxscriber import __version__
-from maxscriber.banner import print_banner, print_exit_message
+from maxscriber.utils.banner import print_banner, print_exit_message
 from maxscriber.core import (
     run_transcribe, run_qc, run_stats, run_plot,
     run_all_phase1, run_all_phase2,
@@ -75,13 +75,24 @@ def main(ctx):
         pass
 
     if ctx.invoked_subcommand is None:
+        from rich.console import Console
+        from rich.table import Table
         print_banner()
-        click.echo(f"Welcome to MaxScriber v{__version__}!")
-        click.echo("Please choose an operating mode:\n")
-        click.echo("  1. Visual Mode (TUI) : maxscriber tui")
-        click.echo("  2. CLI Mode          : maxscriber run [OPTIONS]\n")
-        click.echo("Run 'maxscriber --help' for all available commands.")
-        print_exit_message()
+        console = Console()
+        console.print(f"Welcome to [bold]MaxScriber[/] [bold #00ffff]v{__version__}[/]!")
+        console.print(f"[bold #ffffff]Creator:[/] [bold #d49040]@vaishnavpvarma[/]")
+        console.print("Please choose an operating mode:\n")
+        
+        table = Table.grid(padding=(0, 0))
+        table.add_column(style="bold #00ffff")
+        table.add_column(style="bold #c0d0d0")
+        table.add_row("  1. Visual Mode (TUI) ", ": maxscriber tui")
+        table.add_row("  2. CLI Mode          ", ": maxscriber run [OPTIONS]")
+        
+        console.print(table)
+        console.print()
+        console.print("[bold #c0d0d0]Run 'maxscriber --help' for all available commands.[/]\n")
+        console.print("[bold #d49040]SIMPLY LOVELY 😉- Max Verstappen[/]")
 
 @main.command("tui")
 def tui_mode():

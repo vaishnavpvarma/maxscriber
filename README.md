@@ -1,71 +1,75 @@
 # MaxScriber
 
-**MaxScriber** is a universal, adaptive pipeline for extracting, tabulating, and analyzing structured data from medical laboratory report PDFs. 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Documentation Status](https://readthedocs.org/projects/maxscriber/badge/?version=latest)](https://maxscriber.readthedocs.io/en/latest/?badge=latest)
+[![Status: Pre-release](https://img.shields.io/badge/status-pre--release-orange.svg)](CHANGELOG.md)
 
-Built with clinical research in mind, MaxScriber replaces manual data entry with an intelligent, multi-pass extraction engine. Whether you're working with CBC, LFT, KFT, or Serology reports, MaxScriber can adapt to different hospital PDF formats and automatically export your data to Excel, alongside statistical summaries and distribution plots.
+![MaxScriber Banner](maxscriber_banner.png)
 
-## Key Features
+MaxScriber is a universal, adaptive pipeline for extracting, tabulating, and analyzing structured clinical data from heterogeneous medical laboratory report PDFs. It uses dynamic YAML schemas to map layout structures and extract metrics, so new report formats can be supported by writing a schema rather than custom parser code per hospital.
 
-- 🏥 **Universal Adaptability:** Define new PDF extraction schemas using simple YAML files—no code changes required.
-- ⚡ **High Performance:** Parallel processing allows for rapid batch extraction of hundreds of PDFs.
-- 🔬 **Clinical Analytics:** Automatically generate descriptive statistics, data plots, and R scripts for your datasets.
-- 🖥️ **Beautiful CLI & TUI:** Features a modern, intuitive command-line interface powered by `Click` and `Textual`.
+> **Project status:** MaxScriber is in early development (pre-1.0). The CLI interface and output formats may still change between releases. See [CHANGELOG.md](CHANGELOG.md) for what's actually working in each version.
 
----
+## Features
+
+- Schema-driven PDF extraction — define a report layout once in YAML, no per-format parser code
+- Structured tabular output (Excel and database export)
+- Duplicate detection and QC on extracted records
+- Longitudinal tracking across repeated patient reports
+- Severity stratification of lab values
+- R-based plot generation for extracted metrics
+- Interactive terminal UI (TUI) for managing schemas and inspecting records
+
+## Requirements
+
+- Python 3.9 or later
+- R (required only for the plot-generation feature; the extraction and tabulation pipeline runs without it)
 
 ## Installation
 
-MaxScriber is packaged as a universal Python library, supporting all major package managers. Requires **Python 3.9+**.
+Clone the repository and install in editable mode:
 
-### Using `uv` (Recommended - Fastest)
 ```bash
-uv pip install -e .
-```
-
-### Using `pip`
-```bash
+git clone https://github.com/vaishnavpvarma/maxscriber.git
+cd maxscriber
 pip install -e .
 ```
 
-### Using `Conda` / `Mamba`
-```bash
-conda env create -f environment.yml
-conda activate maxscriber-dev
-```
+A Bioconda package is planned for a future release — see [ROADMAP.md](ROADMAP.md).
 
----
+## Quickstart
 
-## Usage
+### 1. Transcribe PDF reports
 
-MaxScriber comes with an intuitive CLI. 
-
-### Interactive TUI Wizard
-Run the tool without arguments to launch the interactive, full-screen terminal UI:
-```bash
-maxscriber
-```
-
-### Headless CLI Execution
-You can bypass the TUI and run jobs directly from the command line:
+Transcribe clinical reports in an input directory and export structured Excel and database outputs using a defined schema:
 
 ```bash
-# Run the complete pipeline using a saved schema
-maxscriber run --schema MaxHospitals_Dengue --input-dir ./my_pdfs --output-dir ./results
-
-# Run using a custom test list file
-maxscriber run --tests-file my_tests.txt --input-dir ./my_pdfs --output-dir ./results
-
-# Create a new schema from a batch of sample PDFs
-maxscriber schema create
+maxscriber run --schema example_schema --input-dir ./raw_pdfs --output-dir ./results
 ```
 
-### Get Help
+### 2. Launch the terminal dashboard
+
+Launch the interactive TUI to manage schemas, load extraction jobs, and inspect patient records:
+
 ```bash
-maxscriber --help
+maxscriber tui
 ```
 
----
+## Documentation
+
+Full documentation, including schema authoring, advanced configuration, and the complete CLI reference, is available on Read the Docs:
+
+**[https://maxscriber.readthedocs.io](https://maxscriber.readthedocs.io)**
+
+## Roadmap
+
+Planned work, including the TUI redesign and Bioconda packaging, is tracked in [ROADMAP.md](ROADMAP.md).
+
+## Citation
+
+If MaxScriber is useful in your research, please cite this repository. A formal citation format (BibTeX / `CITATION.cff`) will be added once a corresponding publication or release is available.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

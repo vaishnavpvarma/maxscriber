@@ -70,3 +70,6 @@ scratch/
 temp/
 *.log
 *.tmp
+
+# Sphinx build files
+docs/_build/
