@@ -3,18 +3,19 @@ MaXScriber v2.0
 CLI entry point using Click and Textual.
 """
 
+import logging
 import sys
 import time
-import click
 from pathlib import Path
-import logging
+
+import click
 
 from maxscriber import __version__
-from maxscriber.utils.banner import print_banner, print_exit_message
 from maxscriber.core import (
-    run_transcribe, run_qc, run_stats, run_plot,
-    run_all_phase1, run_all_phase2,
+    run_all_phase1,
+    run_all_phase2,
 )
+from maxscriber.utils.banner import print_banner, print_exit_message
 
 RED = "\033[91m"
 RESET = "\033[0m"
@@ -22,7 +23,7 @@ RESET = "\033[0m"
 
 def _verification_gate(output_dir: Path) -> bool:
     """Conditional Verification Gate."""
-    log_path = (output_dir / 'extraction.log').resolve()
+    log_path = (output_dir / "extraction.log").resolve()
     while True:
         try:
             choice = input("\nHave you referred to the extraction.log file? Yes or No: ").strip()
@@ -30,9 +31,9 @@ def _verification_gate(output_dir: Path) -> bool:
             print("\nAborted.")
             sys.exit(1)
 
-        if choice.lower() in ('y', 'yes'):
+        if choice.lower() in ("y", "yes"):
             return True
-        elif choice.lower() in ('n', 'no'):
+        elif choice.lower() in ("n", "no"):
             print(f"\n   Extraction log: {log_path}")
             print("   Proceed after verification.\n")
             while True:
@@ -41,17 +42,21 @@ def _verification_gate(output_dir: Path) -> bool:
                 except (EOFError, KeyboardInterrupt):
                     print("\nAborted.")
                     sys.exit(1)
-                if sub == '1':
+                if sub == "1":
                     return True
-                elif sub == '0':
-                    print(f"\n{RED}WARNING: This will generate only Master_Data.xlsx and extraction.log.")
+                elif sub == "0":
+                    print(
+                        f"\n{RED}WARNING: This will generate only Master_Data.xlsx and extraction.log."
+                    )
                     print(f"This will NOT proceed to QC, Stats, and Plots. Are you sure?{RESET}\n")
                     try:
-                        confirm = input("   Type 'yes' to confirm abort, or 'no' to go back: ").strip()
+                        confirm = input(
+                            "   Type 'yes' to confirm abort, or 'no' to go back: "
+                        ).strip()
                     except (EOFError, KeyboardInterrupt):
                         print("\nAborted.")
                         sys.exit(1)
-                    if confirm.lower() in ('y', 'yes'):
+                    if confirm.lower() in ("y", "yes"):
                         return False
                     else:
                         continue
@@ -63,36 +68,39 @@ def _verification_gate(output_dir: Path) -> bool:
 
 from maxscriber.tui.app import run_tui
 
+
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="MaxScriber")
 @click.pass_context
 def main(ctx):
     """MaXScriber v2.0 | Universal Medical PDF Extractor"""
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
     if ctx.invoked_subcommand is None:
         from rich.console import Console
         from rich.table import Table
+
         print_banner()
         console = Console()
         console.print(f"Welcome to [bold]MaxScriber[/] [bold #00ffff]v{__version__}[/]!")
-        console.print(f"[bold #ffffff]Creator:[/] [bold #d49040]@vaishnavpvarma[/]")
+        console.print("[bold #ffffff]Creator:[/] [bold #d49040]@vaishnavpvarma[/]")
         console.print("Please choose an operating mode:\n")
-        
+
         table = Table.grid(padding=(0, 0))
         table.add_column(style="bold #00ffff")
         table.add_column(style="bold #c0d0d0")
         table.add_row("  1. Visual Mode (TUI) ", ": maxscriber tui")
         table.add_row("  2. CLI Mode          ", ": maxscriber run [OPTIONS]")
-        
+
         console.print(table)
         console.print()
         console.print("[bold #c0d0d0]Run 'maxscriber --help' for all available commands.[/]\n")
         console.print("[bold #d49040]SIMPLY LOVELY 😉- Max Verstappen[/]")
+
 
 @main.command("tui")
 def tui_mode():
@@ -101,35 +109,66 @@ def tui_mode():
 
 
 @main.command()
-@click.option('--input-dir', required=True, type=click.Path(exists=True, file_okay=False), help='Directory containing input PDF lab reports')
-@click.option('--output-dir', required=True, type=click.Path(file_okay=False), help='Directory to write output files')
-@click.option('--schema', type=str, default='MaxHospitals_Dengue', help='Schema to use for extraction')
-@click.option('--pattern', type=click.Choice(['2024_2025', '2023']), default='2024_2025', help='Pattern logic for extraction (legacy)')
-@click.option('--threads', '-t', type=int, default=None, help='Number of concurrent worker processes')
-@click.option('--verbose', '-v', is_flag=True, help='Run sequentially and stream logs to stdout')
-@click.option('--job-name', type=str, default=None, help='Namespace prefix for all generated outputs')
+@click.option(
+    "--input-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False),
+    help="Directory containing input PDF lab reports",
+)
+@click.option(
+    "--output-dir",
+    required=True,
+    type=click.Path(file_okay=False),
+    help="Directory to write output files",
+)
+@click.option(
+    "--schema", type=str, default="MaxHospitals_Dengue", help="Schema to use for extraction"
+)
+@click.option(
+    "--pattern",
+    type=click.Choice(["2024_2025", "2023"]),
+    default="2024_2025",
+    help="Pattern logic for extraction (legacy)",
+)
+@click.option(
+    "--threads", "-t", type=int, default=None, help="Number of concurrent worker processes"
+)
+@click.option("--verbose", "-v", is_flag=True, help="Run sequentially and stream logs to stdout")
+@click.option(
+    "--job-name", type=str, default=None, help="Namespace prefix for all generated outputs"
+)
 def run(input_dir, output_dir, schema, pattern, threads, verbose, job_name):
     """Full pipeline: Transcribe -> QC -> Stats -> Plot"""
     print_banner()
     if not job_name:
         try:
-            job_name = input("Enter a <job_name> for this run (or press Enter for 'default'): ").strip()
+            job_name = input(
+                "Enter a <job_name> for this run (or press Enter for 'default'): "
+            ).strip()
         except (EOFError, KeyboardInterrupt):
             print("\nAborted.")
             sys.exit(1)
         if not job_name:
-            job_name = 'default'
+            job_name = "default"
 
     out = Path(output_dir)
     inp = Path(input_dir)
-    pdf_count = len([f for f in inp.iterdir() if f.is_file() and f.suffix.lower() == '.pdf'])
+    pdf_count = len([f for f in inp.iterdir() if f.is_file() and f.suffix.lower() == ".pdf"])
 
     start_time = time.time()
 
     # Stub for Phase 1
-    selected_cats = ['CBC', 'LFT', 'KFT', 'DENGUE'] # Defaulted for now, will be driven by schema
-    
-    run_all_phase1(inp, out, pattern=pattern, threads=threads, verbose=verbose, job_name=job_name, selected_categories=selected_cats)
+    selected_cats = ["CBC", "LFT", "KFT", "DENGUE"]  # Defaulted for now, will be driven by schema
+
+    run_all_phase1(
+        inp,
+        out,
+        pattern=pattern,
+        threads=threads,
+        verbose=verbose,
+        job_name=job_name,
+        selected_categories=selected_cats,
+    )
 
     should_continue = _verification_gate(out)
     if should_continue:
@@ -150,15 +189,18 @@ def schema():
     """Manage MaxScriber schemas"""
     pass
 
+
 @schema.command()
 def list():
     """List all saved schemas"""
     click.echo("Listing schemas... (to be implemented in Phase 3)")
+
 
 @schema.command()
 def create():
     """Launch schema creation wizard"""
     click.echo("Schema creation wizard... (to be implemented in Phase 3)")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

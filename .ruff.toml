@@ -1,9 +1,23 @@
-line-length = 100
+line-length = 120
 target-version = "py310"
+
+exclude = [
+    "Ideation",
+]
 
 [lint]
 select = ["E", "F", "I", "W", "C90"]
-ignore = []
+ignore = [
+    "E501", # Line too long
+    "C901", # Too complex
+    "E402", # Module level import not at top of file
+    "E722", # Do not use bare except
+    "F811", # Redefinition of unused name
+    "F841", # Local variable is assigned to but never used
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401"] # Exclude unused imports in init files
 
 [format]
 quote-style = "double"

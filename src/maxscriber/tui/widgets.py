@@ -1,8 +1,8 @@
-from textual.app import ComposeResult
-from textual.containers import Vertical, Horizontal
-from textual.widgets import Static, Button, Label
-from textual.reactive import reactive
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.reactive import reactive
+from textual.widgets import Button, Label, Static
 
 ASCII_BANNER = r"""
  [bold #e0e0e0]  __  __             [/][bold #e0e0e0] _____           _ _               [/]
@@ -14,14 +14,17 @@ ASCII_BANNER = r"""
  [bold #d49040]              ELECTRONIC HEALTH RECORD TRANSCRIBER         [/]
 """
 
+
 class Banner(Static):
     def render(self) -> str:
         return ASCII_BANNER
 
+
 class WavyChart(Static):
     """Braille-based wavy chart widget."""
+
     shift_offset = reactive(0)
-    
+
     def __init__(self, color_style: str, **kwargs):
         self.color_style = color_style
         self.p1 = "  ⡠⠤⢄⡀    ⢀⡠⠤⢄⡀     ⢀⡠⠤⢄⡀    ⢀⡠⠤⢄⡀ " * 3
@@ -32,16 +35,17 @@ class WavyChart(Static):
     def render(self) -> Text:
         w = self.size.width if self.size.width > 0 else 40
         offset = self.shift_offset % 20
-        
-        l1 = self.p1[offset:offset+w]
-        l2 = self.p2[offset:offset+w]
-        l3 = self.p3[offset:offset+w]
-        
+
+        l1 = self.p1[offset : offset + w]
+        l2 = self.p2[offset : offset + w]
+        l3 = self.p3[offset : offset + w]
+
         text = Text()
         text.append(l1 + "\n", style=f"bold {self.color_style}")
         text.append(l2 + "\n", style=f"{self.color_style}")
         text.append(l3, style=f"dim {self.color_style}")
         return text
+
 
 class StatsPanel(Vertical):
     current_throughput = reactive(0.0)
@@ -56,7 +60,7 @@ class StatsPanel(Vertical):
             yield Label("0.0", classes="stats-min")
             self.lbl_throughput = Label("0.0", classes="stats-current")
             yield self.lbl_throughput
-            
+
         yield Label("Data Confidence Probability", classes="stats-title")
         yield Label("100%", classes="stats-max")
         self.chart_confidence = WavyChart(color_style="#33ff33", classes="wavy-chart")
@@ -76,9 +80,12 @@ class StatsPanel(Vertical):
         if val > 0:
             self.chart_confidence.shift_offset += 1
 
+
 class ActionMenu(Vertical):
     def compose(self) -> ComposeResult:
         yield Button("📁 Schema Registry", id="btn_nav_schemas", classes="menu-btn default-btn")
-        yield Button("⚙️ Parser Configuration", id="btn_nav_settings", classes="menu-btn default-btn")
+        yield Button(
+            "⚙️ Parser Configuration", id="btn_nav_settings", classes="menu-btn default-btn"
+        )
         yield Button("➕ New EHR Template", id="btn_new_schema", classes="menu-btn default-btn")
         yield Button("▶ Execute Extraction Pipeline", id="btn_run", classes="menu-btn primary-btn")

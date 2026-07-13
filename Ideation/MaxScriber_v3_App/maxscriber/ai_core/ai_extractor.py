@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -8,12 +8,18 @@ logger = logging.getLogger(__name__)
 try:
     # pyrefly: ignore [missing-import]
     import torch
+
     # pyrefly: ignore [missing-import]
-    from transformers import LayoutLMv3Processor, LayoutLMv3ForTokenClassification
     # pyrefly: ignore [missing-import]
-    from transformers import AutoTokenizer, AutoModelForTokenClassification
     # pyrefly: ignore [missing-import]
-    from transformers import pipeline
+    from transformers import (
+        AutoModelForTokenClassification,
+        AutoTokenizer,
+        LayoutLMv3ForTokenClassification,
+        LayoutLMv3Processor,
+        pipeline,
+    )
+
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
@@ -25,7 +31,7 @@ class AIExtractor:
     AI Extractor module utilizing LayoutLMv3 for spatial document understanding
     and BioBERT for biomedical entity extraction.
     """
-    
+
     def __init__(self, use_cuda: bool = True):
         self.ml_available = ML_AVAILABLE
         if not self.ml_available:
@@ -46,10 +52,14 @@ class AIExtractor:
             logger.info("CUDA not requested or not available. Falling back to CPU.")
             return "cpu"
 
-    def load_models(self, layoutlm_path: str = "microsoft/layoutlmv3-base", biobert_path: str = "dmis-lab/biobert-v1.1"):
+    def load_models(
+        self,
+        layoutlm_path: str = "microsoft/layoutlmv3-base",
+        biobert_path: str = "dmis-lab/biobert-v1.1",
+    ):
         """
         Loads the HuggingFace models into memory.
-        
+
         Args:
             layoutlm_path (str): HuggingFace hub path or local path to LayoutLMv3 model.
             biobert_path (str): HuggingFace hub path or local path to BioBERT model.
@@ -59,40 +69,41 @@ class AIExtractor:
 
         logger.info(f"Loading LayoutLMv3 from {layoutlm_path} onto {self.device}...")
         self.layoutlm_processor = LayoutLMv3Processor.from_pretrained(layoutlm_path)
-        self.layoutlm_model = LayoutLMv3ForTokenClassification.from_pretrained(layoutlm_path).to(self.device)
+        self.layoutlm_model = LayoutLMv3ForTokenClassification.from_pretrained(layoutlm_path).to(
+            self.device
+        )
 
         logger.info(f"Loading BioBERT from {biobert_path} onto {self.device}...")
         tokenizer = AutoTokenizer.from_pretrained(biobert_path)
         model = AutoModelForTokenClassification.from_pretrained(biobert_path).to(self.device)
-        self.biobert_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device)
-        
+        self.biobert_pipeline = pipeline(
+            "ner", model=model, tokenizer=tokenizer, device=self.device
+        )
+
         logger.info("AI Models loaded successfully.")
 
     def extract_entities(self, text: str, image: Any = None) -> Dict[str, Any]:
         """
         Extracts entities from a document using both spatial (if image provided) and text data.
-        
+
         Args:
             text (str): The raw text of the document.
             image: The image of the document page (PIL Image) for LayoutLMv3.
-            
+
         Returns:
             dict: Structured data containing extracted clinical entities.
         """
         if not self.ml_available:
             raise RuntimeError("ML libraries not installed. Cannot run AIExtractor.")
 
-        results = {
-            "layout_entities": [],
-            "clinical_entities": []
-        }
+        results = {"layout_entities": [], "clinical_entities": []}
 
         # 1. Spatial/Layout extraction
         if image and self.layoutlm_model and self.layoutlm_processor:
             # Placeholder for LayoutLMv3 encoding/forward pass
             # encoding = self.layoutlm_processor(image, text, return_tensors="pt").to(self.device)
             # outputs = self.layoutlm_model(**encoding)
-            pass 
+            pass
 
         # 2. Text-only Biomedical extraction
         if text and self.biobert_pipeline:

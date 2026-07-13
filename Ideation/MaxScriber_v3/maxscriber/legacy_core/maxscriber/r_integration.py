@@ -4,14 +4,15 @@ Export stratified clinical data to Excel and generate standalone R scripts
 that perform Kruskal-Wallis analysis and produce publication-ready plots.
 """
 
-import pandas as pd
-from pathlib import Path
 import logging
 import subprocess
 import textwrap
+from pathlib import Path
 
+import pandas as pd
 
 # ── Excel Export ────────────────────────────────────────────────────────────
+
 
 def export_stratified_excel(stratified_data: dict, excel_path: Path) -> Path:
     """Write stratified biomarker data to an Excel workbook.
@@ -32,9 +33,9 @@ def export_stratified_excel(stratified_data: dict, excel_path: Path) -> Path:
     -------
     Path  – the written file path.
     """
-    group_names = ['Mild', 'Moderate', 'Clinically Severe']
+    group_names = ["Mild", "Moderate", "Clinically Severe"]
 
-    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
         for group in group_names:
             # Collect every biomarker's values for this group
             col_data = {}
@@ -49,6 +50,7 @@ def export_stratified_excel(stratified_data: dict, excel_path: Path) -> Path:
 
 
 # ── R Script Generation ────────────────────────────────────────────────────
+
 
 def generate_r_script(
     stratified_data: dict,
@@ -80,8 +82,11 @@ def generate_r_script(
     -------
     Path  – the written script path.
     """
-    geom = "geom_violin(trim = FALSE, alpha = 0.7) + geom_boxplot(width = 0.15, fill = 'white')" \
-        if plot_type == "2" else "geom_boxplot(alpha = 0.7, outlier.colour = 'red', outlier.shape = 16)"
+    geom = (
+        "geom_violin(trim = FALSE, alpha = 0.7) + geom_boxplot(width = 0.15, fill = 'white')"
+        if plot_type == "2"
+        else "geom_boxplot(alpha = 0.7, outlier.colour = 'red', outlier.shape = 16)"
+    )
 
     plot_subtitle = "Violin Plot" if plot_type == "2" else "Box-and-Whisker Plot"
 
@@ -90,7 +95,7 @@ def generate_r_script(
     out_dir_posix = r_script_path.parent.as_posix()
 
     variables = list(stratified_data.keys())
-    var_vector = ', '.join(f'"{v}"' for v in variables)
+    var_vector = ", ".join(f'"{v}"' for v in variables)
 
     r_code = textwrap.dedent(f"""\
     #!/usr/bin/env Rscript
@@ -204,11 +209,12 @@ def generate_r_script(
     cat("══════════════════════════════════════════════════════════\\n")
     """)
 
-    r_script_path.write_text(r_code, encoding='utf-8')
+    r_script_path.write_text(r_code, encoding="utf-8")
     return r_script_path
 
 
 # ── R Execution ─────────────────────────────────────────────────────────────
+
 
 def run_r_script(r_script_path: Path, logger: logging.Logger) -> bool:
     """Execute the generated R script via ``Rscript``.

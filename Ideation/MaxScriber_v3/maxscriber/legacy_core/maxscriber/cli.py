@@ -3,18 +3,22 @@ MaXScriber v1.0
 CLI entry point with argparse subcommands.
 """
 
-import sys
-import logging
 import argparse
-import time
-import os
 import concurrent.futures
+import logging
+import os
+import sys
+import time
 from pathlib import Path
 
 from maxscriber.banner import print_banner, print_exit_message
 from maxscriber.pipeline import (
-    run_transcribe, run_qc, run_stats, run_plot,
-    run_all_phase1, run_all_phase2,
+    run_all_phase1,
+    run_all_phase2,
+    run_plot,
+    run_qc,
+    run_stats,
+    run_transcribe,
 )
 
 # ANSI color from branding
@@ -29,7 +33,7 @@ def _verification_gate(output_dir: Path, job_name: str) -> bool:
     Returns True if the pipeline should continue to Phase 2 (QC/Stats/Plot).
     Returns False if the user chose to abort.
     """
-    log_path = (output_dir / f'{job_name}_extraction.log').resolve()
+    log_path = (output_dir / f"{job_name}_extraction.log").resolve()
 
     while True:
         try:
@@ -38,10 +42,10 @@ def _verification_gate(output_dir: Path, job_name: str) -> bool:
             print("\nAborted.")
             sys.exit(1)
 
-        if choice in ('Y', 'y', 'Yes', 'YES', 'yes'):
+        if choice in ("Y", "y", "Yes", "YES", "yes"):
             return True  # proceed to Phase 2
 
-        elif choice in ('N', 'n', 'No', 'NO', 'no'):
+        elif choice in ("N", "n", "No", "NO", "no"):
             print(f"\n   Extraction log: {log_path}")
             print("   Proceed after verification.\n")
 
@@ -53,21 +57,25 @@ def _verification_gate(output_dir: Path, job_name: str) -> bool:
                     print("\nAborted.")
                     sys.exit(1)
 
-                if sub == '1':
+                if sub == "1":
                     return True  # continue to Phase 2
 
-                elif sub == '0':
+                elif sub == "0":
                     # RED warning + confirmation
-                    print(f"\n{RED}WARNING: This will generate only Master_Data.xlsx and extraction.log.")
+                    print(
+                        f"\n{RED}WARNING: This will generate only Master_Data.xlsx and extraction.log."
+                    )
                     print(f"This will NOT proceed to QC, Stats, and Plots. Are you sure?{RESET}\n")
 
                     try:
-                        confirm = input("   Type 'yes' to confirm abort, or 'no' to go back: ").strip()
+                        confirm = input(
+                            "   Type 'yes' to confirm abort, or 'no' to go back: "
+                        ).strip()
                     except (EOFError, KeyboardInterrupt):
                         print("\nAborted.")
                         sys.exit(1)
 
-                    if confirm in ('Y', 'y', 'Yes', 'YES', 'yes'):
+                    if confirm in ("Y", "y", "Yes", "YES", "yes"):
                         return False  # abort — only Master_Data + log
                     else:
                         continue  # back to sub-option menu
@@ -81,93 +89,132 @@ def _verification_gate(output_dir: Path, job_name: str) -> bool:
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        prog='maxscriber',
-        description='MaXScriber v1.0 - Eau Rouge Edition | Intelligent Multi-Pass Medical PDF Extractor',
-        epilog='coded with love by vaishnavpvarma  |  Inspiration: Max Verstappen / Red Bull Racing',
+        prog="maxscriber",
+        description="MaXScriber v1.0 - Eau Rouge Edition | Intelligent Multi-Pass Medical PDF Extractor",
+        epilog="coded with love by vaishnavpvarma  |  Inspiration: Max Verstappen / Red Bull Racing",
     )
 
     subparsers = parser.add_subparsers(
-        dest='command',
-        title='commands',
+        dest="command",
+        title="commands",
         description='Available pipeline stages. Use "maxscriber <command> -h" for command-specific help.',
     )
 
     # --- run ---
     run_parser = subparsers.add_parser(
-        'run',
-        help='Full pipeline: Transcribe -> QC -> Stats -> Plot',
-        description='Execute the complete MaXScriber pipeline end-to-end.',
+        "run",
+        help="Full pipeline: Transcribe -> QC -> Stats -> Plot",
+        description="Execute the complete MaXScriber pipeline end-to-end.",
     )
-    run_parser.add_argument('--input_dir', required=True, type=str,
-                            help='Directory containing input PDF lab reports')
-    run_parser.add_argument('--output_dir', required=True, type=str,
-                            help='Directory to write output files (Excel, stats, plots)')
-    run_parser.add_argument('--verbose', '-v', action='store_true',
-                            help='Enable verbose logging and disable progress animation')
+    run_parser.add_argument(
+        "--input_dir", required=True, type=str, help="Directory containing input PDF lab reports"
+    )
+    run_parser.add_argument(
+        "--output_dir",
+        required=True,
+        type=str,
+        help="Directory to write output files (Excel, stats, plots)",
+    )
+    run_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging and disable progress animation",
+    )
     # New flags
-    run_parser.add_argument('--auto_continue', action='store_true',
-                            help='Bypass the interactive verification gate and continue to Phase 2')
-    run_parser.add_argument('--threads', '-t', type=int, default=os.cpu_count(),
-                            help='Number of parallel threads for PDF extraction (default: CPU count)')
+    run_parser.add_argument(
+        "--auto_continue",
+        action="store_true",
+        help="Bypass the interactive verification gate and continue to Phase 2",
+    )
+    run_parser.add_argument(
+        "--threads",
+        "-t",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of parallel threads for PDF extraction (default: CPU count)",
+    )
 
     # --- multirun ---
     multirun_parser = subparsers.add_parser(
-        'multirun',
-        help='Run multiple independent jobs concurrently',
-        description='Execute several MaxScriber jobs in parallel. Each job requires a name, input directory, and output directory.',
+        "multirun",
+        help="Run multiple independent jobs concurrently",
+        description="Execute several MaxScriber jobs in parallel. Each job requires a name, input directory, and output directory.",
     )
-    multirun_parser.add_argument('--job', nargs=3, action='append', metavar=('NAME','INPUT','OUTPUT'), required=True,
-                                 help='Specify a job: <NAME> <INPUT_DIR> <OUTPUT_DIR>. Can be repeated.')
-    multirun_parser.add_argument('--threads', '-t', type=int, default=os.cpu_count(),
-                                 help='Number of concurrent jobs to run (default: CPU count)')
-    multirun_parser.add_argument('--auto_continue', action='store_true',
-                                 help='Pass --auto_continue to each job')
-    multirun_parser.add_argument('--verbose', '-v', action='store_true',
-                                 help='Enable verbose logging for each job')
+    multirun_parser.add_argument(
+        "--job",
+        nargs=3,
+        action="append",
+        metavar=("NAME", "INPUT", "OUTPUT"),
+        required=True,
+        help="Specify a job: <NAME> <INPUT_DIR> <OUTPUT_DIR>. Can be repeated.",
+    )
+    multirun_parser.add_argument(
+        "--threads",
+        "-t",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of concurrent jobs to run (default: CPU count)",
+    )
+    multirun_parser.add_argument(
+        "--auto_continue", action="store_true", help="Pass --auto_continue to each job"
+    )
+    multirun_parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging for each job"
+    )
     # --- transcribe ---
     transcribe_parser = subparsers.add_parser(
-        'transcribe',
-        help='Extract text from PDFs and map to canonical test names',
-        description='Run PDF text extraction, test name mapping, and QC hashing. '
-                    'Saves intermediate data for downstream commands.',
+        "transcribe",
+        help="Extract text from PDFs and map to canonical test names",
+        description="Run PDF text extraction, test name mapping, and QC hashing. "
+        "Saves intermediate data for downstream commands.",
     )
-    transcribe_parser.add_argument('--input_dir', required=True, type=str,
-                                   help='Directory containing input PDF lab reports')
-    transcribe_parser.add_argument('--output_dir', required=True, type=str,
-                                   help='Directory to write extraction results')
-    transcribe_parser.add_argument('--verbose', '-v', action='store_true',
-                                   help='Enable verbose logging and disable progress animation')
+    transcribe_parser.add_argument(
+        "--input_dir", required=True, type=str, help="Directory containing input PDF lab reports"
+    )
+    transcribe_parser.add_argument(
+        "--output_dir", required=True, type=str, help="Directory to write extraction results"
+    )
+    transcribe_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging and disable progress animation",
+    )
 
     # --- qc ---
     qc_parser = subparsers.add_parser(
-        'qc',
-        help='Report content hashing and duplicate detection results',
-        description='Display QC results: duplicate content files and failed extractions. '
-                    'Requires a prior "transcribe" run.',
+        "qc",
+        help="Report content hashing and duplicate detection results",
+        description="Display QC results: duplicate content files and failed extractions. "
+        'Requires a prior "transcribe" run.',
     )
-    qc_parser.add_argument('--output_dir', required=True, type=str,
-                           help='Directory containing prior extraction data')
+    qc_parser.add_argument(
+        "--output_dir", required=True, type=str, help="Directory containing prior extraction data"
+    )
 
     # --- stats ---
     stats_parser = subparsers.add_parser(
-        'stats',
-        help='Generate the Stats_Refined.txt statistical report',
-        description='Produce a comprehensive statistical summary including demographics, '
-                    'diagnostic insights, and clinical condition prevalence. '
-                    'Requires a prior "transcribe" run.',
+        "stats",
+        help="Generate the Stats_Refined.txt statistical report",
+        description="Produce a comprehensive statistical summary including demographics, "
+        "diagnostic insights, and clinical condition prevalence. "
+        'Requires a prior "transcribe" run.',
     )
-    stats_parser.add_argument('--output_dir', required=True, type=str,
-                              help='Directory containing prior extraction data')
+    stats_parser.add_argument(
+        "--output_dir", required=True, type=str, help="Directory containing prior extraction data"
+    )
 
     # --- plot ---
     plot_parser = subparsers.add_parser(
-        'plot',
-        help='Generate clinical distribution graphs',
-        description='Create age distribution, haemoglobin, and platelet count histograms. '
-                    'Requires a prior "transcribe" run.',
+        "plot",
+        help="Generate clinical distribution graphs",
+        description="Create age distribution, haemoglobin, and platelet count histograms. "
+        'Requires a prior "transcribe" run.',
     )
-    plot_parser.add_argument('--output_dir', required=True, type=str,
-                             help='Directory containing prior extraction data')
+    plot_parser.add_argument(
+        "--output_dir", required=True, type=str, help="Directory containing prior extraction data"
+    )
 
     # --- No args: show banner + help ---
     if len(sys.argv) == 1:
@@ -181,8 +228,8 @@ def main():
     # Always show banner
     print_banner()
 
-    if args.command in ['run', 'multirun', 'transcribe', 'qc', 'stats', 'plot']:
-        if args.command != 'multirun':
+    if args.command in ["run", "multirun", "transcribe", "qc", "stats", "plot"]:
+        if args.command != "multirun":
             while True:
                 try:
                     job_name = input("\nEnter a project/job name (e.g. TestRun2025): ").strip()
@@ -192,12 +239,12 @@ def main():
                 except (EOFError, KeyboardInterrupt):
                     print("\nAborted.")
                     sys.exit(1)
-        
+
         try:
-            if args.command == 'run':
+            if args.command == "run":
                 out = Path(args.output_dir)
                 inp = Path(args.input_dir)
-                pdf_count = len(list(inp.glob('*.pdf')))
+                pdf_count = len(list(inp.glob("*.pdf")))
                 verbose = args.verbose
                 threads = args.threads
                 auto_continue = args.auto_continue
@@ -218,7 +265,7 @@ def main():
                     run_all_phase2(out, job_name)
                 else:
                     # Graceful abort — log reason, flush, and close handlers
-                    logger = logging.getLogger('MaxScriber')
+                    logger = logging.getLogger("MaxScriber")
                     logger.info("Pipeline aborted by user at verification gate.")
                     logger.info(f"extraction.log preserved at {out / f'{job_name}_extraction.log'}")
                     for handler in logger.handlers[:]:
@@ -230,15 +277,19 @@ def main():
                         handler.flush()
                         handler.close()
                         logging.getLogger().removeHandler(handler)
-                    print(f"\n{job_name}_Master_Data.xlsx and {job_name}_extraction.log saved to {out}")
+                    print(
+                        f"\n{job_name}_Master_Data.xlsx and {job_name}_extraction.log saved to {out}"
+                    )
 
                 elapsed_time = time.time() - start_time
                 minutes, seconds = divmod(int(elapsed_time), 60)
                 manual_time_minutes = pdf_count * 5
                 print(f"\nTotal time taken to transcribe: {minutes} Minutes and {seconds} Seconds.")
-                print(f"Doing this manually would have taken you approximately {manual_time_minutes} minutes. You're welcome! 😉")
+                print(
+                    f"Doing this manually would have taken you approximately {manual_time_minutes} minutes. You're welcome! 😉"
+                )
 
-            elif args.command == 'multirun':
+            elif args.command == "multirun":
                 # args.job is a list of [NAME, INPUT, OUTPUT]
                 max_jobs = args.threads
                 auto_continue = args.auto_continue
@@ -257,13 +308,13 @@ def main():
                             continue_flag = True
                         else:
                             continue_flag = _verification_gate(out_path, name)
-                        
+
                         if continue_flag:
                             run_all_phase2(out_path, name)
                         return (name, None)
                     except Exception as e:
                         err_path = out_path / f"{name}_errors.txt"
-                        with open(err_path, 'w') as ef:
+                        with open(err_path, "w") as ef:
                             ef.write(str(e))
                         return (name, err_path)
 
@@ -276,16 +327,16 @@ def main():
                         else:
                             print(f"Job {name} completed successfully.")
 
-            elif args.command == 'transcribe':
+            elif args.command == "transcribe":
                 run_transcribe(Path(args.input_dir), Path(args.output_dir), job_name, args.verbose)
 
-            elif args.command == 'qc':
+            elif args.command == "qc":
                 run_qc(Path(args.output_dir), job_name)
 
-            elif args.command == 'stats':
+            elif args.command == "stats":
                 run_stats(Path(args.output_dir), job_name)
 
-            elif args.command == 'plot':
+            elif args.command == "plot":
                 run_plot(Path(args.output_dir), job_name)
 
             else:
@@ -301,6 +352,5 @@ def main():
     print_exit_message()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

@@ -1,8 +1,8 @@
-import urllib.request
-import tarfile
 import os
 import shutil
 import subprocess
+import tarfile
+import urllib.request
 
 # Download
 url = "https://files.pythonhosted.org/packages/source/l/llama-cpp-python/llama_cpp_python-0.3.23.tar.gz"

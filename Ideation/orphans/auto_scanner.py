@@ -1,22 +1,25 @@
-import pdfplumber
 import re
 from pathlib import Path
-from typing import List, Set, Dict, Tuple
+from typing import Dict, List, Set, Tuple
+
+import pdfplumber
 from maxscriber.utils.logger import get_logger
 
 logger = get_logger("auto_scanner")
+
 
 class AutoScanner:
     """
     Scans PDF files to discover test names and metadata patterns.
     """
+
     def __init__(self):
         self.noise_patterns = [
-            re.compile(r'^\s*$'),               # empty or whitespace
-            re.compile(r'^\d+$'),               # purely numeric
-            re.compile(r'^\d{1,2}[/-]\d{1,2}'), # dates
-            re.compile(r'(?i)result|value|unit|reference|method|normal'), # headers
-            re.compile(r'^[-_]+$')              # dashes/separators
+            re.compile(r"^\s*$"),  # empty or whitespace
+            re.compile(r"^\d+$"),  # purely numeric
+            re.compile(r"^\d{1,2}[/-]\d{1,2}"),  # dates
+            re.compile(r"(?i)result|value|unit|reference|method|normal"),  # headers
+            re.compile(r"^[-_]+$"),  # dashes/separators
         ]
 
     def _is_noise(self, text: str) -> bool:
@@ -27,7 +30,9 @@ class AutoScanner:
                 return True
         return False
 
-    def scan_directory(self, input_dir: Path, max_files: int = 50) -> Tuple[List[str], Dict[str, bool]]:
+    def scan_directory(
+        self, input_dir: Path, max_files: int = 50
+    ) -> Tuple[List[str], Dict[str, bool]]:
         """
         Scans up to max_files PDFs in the directory and extracts candidate test names and detects metadata.
         """
@@ -36,10 +41,10 @@ class AutoScanner:
             "Patient Name": False,
             "Age/Gender": False,
             "Lab ID": False,
-            "Collection Date": False
+            "Collection Date": False,
         }
 
-        pdf_files = [f for f in input_dir.iterdir() if f.is_file() and f.suffix.lower() == '.pdf']
+        pdf_files = [f for f in input_dir.iterdir() if f.is_file() and f.suffix.lower() == ".pdf"]
         pdf_files = pdf_files[:max_files]
 
         if not pdf_files:
@@ -55,10 +60,14 @@ class AutoScanner:
                         # Extract metadata cues from text
                         text = page.extract_text()
                         if text:
-                            if re.search(r'(?i)name|patient', text): metadata_found["Patient Name"] = True
-                            if re.search(r'(?i)age|years|gender|sex', text): metadata_found["Age/Gender"] = True
-                            if re.search(r'(?i)id|ref\s*no|sid', text): metadata_found["Lab ID"] = True
-                            if re.search(r'(?i)date|collected|reported', text): metadata_found["Collection Date"] = True
+                            if re.search(r"(?i)name|patient", text):
+                                metadata_found["Patient Name"] = True
+                            if re.search(r"(?i)age|years|gender|sex", text):
+                                metadata_found["Age/Gender"] = True
+                            if re.search(r"(?i)id|ref\s*no|sid", text):
+                                metadata_found["Lab ID"] = True
+                            if re.search(r"(?i)date|collected|reported", text):
+                                metadata_found["Collection Date"] = True
 
                         # Extract test names from tables (assuming first column)
                         tables = page.extract_tables()
@@ -68,7 +77,7 @@ class AutoScanner:
                                     continue
                                 first_col = row[0]
                                 if first_col and isinstance(first_col, str):
-                                    clean_text = first_col.strip().replace('\n', ' ')
+                                    clean_text = first_col.strip().replace("\n", " ")
                                     if not self._is_noise(clean_text):
                                         test_names.add(clean_text)
             except Exception as e:

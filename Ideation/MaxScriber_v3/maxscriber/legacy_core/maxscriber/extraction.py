@@ -3,29 +3,28 @@ MaXScriber v1.0
 PDF content extraction, helpers, and multi-pass strategies.
 """
 
+import hashlib
+import logging
 import os
 import re
-import logging
-import hashlib
-from typing import Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime
+from typing import Dict, List, Optional
 
 import pdfplumber
 from fuzzywuzzy import fuzz, process
 
 from maxscriber.constants import (
     ALIAS_TO_CANONICAL,
-    REFERENCE_RANGES,
-    LFT_TESTS,
     CBC_TESTS,
-    DENGUE_TESTS,
+    LFT_TESTS,
+    REFERENCE_RANGES,
 )
-
 
 # =============================================================================
 # PDF CONTENT STRUCTURE (With QC Hashing)
 # =============================================================================
+
 
 class PDFContent:
     """Rich PDF content structure."""
@@ -51,7 +50,7 @@ def extract_pdf_content(file_path: str, logger: logging.Logger) -> Optional[PDFC
                 if text:
                     content.pages_text.append((page_num, text))
                     all_text.append(text)
-                    for line in text.split('\n'):
+                    for line in text.split("\n"):
                         line = line.strip()
                         if line:
                             content.lines.append((page_num, line))
@@ -60,16 +59,17 @@ def extract_pdf_content(file_path: str, logger: logging.Logger) -> Optional[PDFC
                     for table in tables:
                         if table:
                             cleaned = [
-                                [str(c).strip() if c else '' for c in row]
-                                for row in table if row and any(row)
+                                [str(c).strip() if c else "" for c in row]
+                                for row in table
+                                if row and any(row)
                             ]
                             if cleaned:
                                 content.tables.append((page_num, cleaned))
 
-        content.full_text = '\n'.join(all_text)
+        content.full_text = "\n".join(all_text)
 
         # Calculate Hash for QC
-        content.content_hash = hashlib.md5(content.full_text.encode('utf-8')).hexdigest()
+        content.content_hash = hashlib.md5(content.full_text.encode("utf-8")).hexdigest()
 
         # Verbose logging from V2
         logger.info(
@@ -86,15 +86,18 @@ def extract_pdf_content(file_path: str, logger: logging.Logger) -> Optional[PDFC
 # EXTRACTION HELPERS (Same as v2 logic)
 # =============================================================================
 
+
 def fuzzy_match_test_name(raw_name: str, threshold: int = 80) -> Optional[str]:
     if not raw_name:
         return None
     clean_name = raw_name.lower().strip()
     clean_name = re.sub(
-        r'\b(calculated|estimated|electrical impedance|vcs|light microscopy)\b',
-        '', clean_name, flags=re.IGNORECASE
+        r"\b(calculated|estimated|electrical impedance|vcs|light microscopy)\b",
+        "",
+        clean_name,
+        flags=re.IGNORECASE,
     )
-    clean_name = re.sub(r'\s+', ' ', clean_name).strip()
+    clean_name = re.sub(r"\s+", " ", clean_name).strip()
     if clean_name in ALIAS_TO_CANONICAL:
         return ALIAS_TO_CANONICAL[clean_name]
     for alias, canonical in ALIAS_TO_CANONICAL.items():
@@ -112,13 +115,23 @@ def normalize_date(date_str: str) -> Optional[str]:
     if not date_str:
         return None
     formats = [
-        '%d/%b/%Y', '%d/%B/%Y', '%d/%b/%y', '%d/%B/%y',
-        '%d-%b-%Y', '%d-%B-%Y', '%d-%b-%y', '%d-%B-%y',
-        '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y', '%d %b %Y', '%d %B %Y',
+        "%d/%b/%Y",
+        "%d/%B/%Y",
+        "%d/%b/%y",
+        "%d/%B/%y",
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%d-%b-%y",
+        "%d-%B-%y",
+        "%d/%m/%Y",
+        "%d-%m-%Y",
+        "%d.%m.%Y",
+        "%d %b %Y",
+        "%d %B %Y",
     ]
     for fmt in formats:
         try:
-            return datetime.strptime(date_str.strip(), fmt).strftime('%d-%m-%Y')
+            return datetime.strptime(date_str.strip(), fmt).strftime("%d-%m-%Y")
         except ValueError:
             continue
     return None
@@ -127,16 +140,20 @@ def normalize_date(date_str: str) -> Optional[str]:
 def extract_all_dates(text: str) -> List[str]:
     dates = []
     patterns = [
-        (r'\b(\d{1,2})/([A-Za-z]{3})/(\d{4})\b',
-         lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
-        (r'\b(\d{1,2})/([A-Za-z]{3})/(\d{2})\b',
-         lambda m: f"{m.group(1)}/{m.group(2)}/20{m.group(3)}"),
-        (r'\b(\d{1,2})-([A-Za-z]{3})-(\d{4})\b',
-         lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
-        (r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b',
-         lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
-        (r'\b(\d{1,2})-(\d{1,2})-(\d{4})\b',
-         lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
+        (
+            r"\b(\d{1,2})/([A-Za-z]{3})/(\d{4})\b",
+            lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}",
+        ),
+        (
+            r"\b(\d{1,2})/([A-Za-z]{3})/(\d{2})\b",
+            lambda m: f"{m.group(1)}/{m.group(2)}/20{m.group(3)}",
+        ),
+        (
+            r"\b(\d{1,2})-([A-Za-z]{3})-(\d{4})\b",
+            lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}",
+        ),
+        (r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b", lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
+        (r"\b(\d{1,2})-(\d{1,2})-(\d{4})\b", lambda m: f"{m.group(1)}/{m.group(2)}/{m.group(3)}"),
     ]
     for pattern, formatter in patterns:
         for match in re.finditer(pattern, text):
@@ -164,7 +181,12 @@ def extract_dates_from_content(content: PDFContent, logger: logging.Logger) -> L
 
 def is_value_plausible(test_name: str, value: str) -> bool:
     if str(value).lower() in [
-        'positive', 'negative', 'detected', 'not detected', 'reactive', 'non-reactive'
+        "positive",
+        "negative",
+        "detected",
+        "not detected",
+        "reactive",
+        "non-reactive",
     ]:
         return True
     try:
@@ -192,6 +214,7 @@ def find_closest_date(pos: int, text: str, dates: List[str]) -> Optional[str]:
 # STRATEGIES
 # =============================================================================
 
+
 def func_table_smart(content, dates, logger):
     res = defaultdict(dict)
     for p, table in content.tables:
@@ -215,19 +238,19 @@ def func_table_smart(content, dates, logger):
         for r in table[1:]:
             if not r or not r[0]:
                 continue
-            nm = fuzzy_match_test_name(r[0].split('\n')[0])
+            nm = fuzzy_match_test_name(r[0].split("\n")[0])
             if not nm:
                 continue
             for idx, d in date_cols.items():
                 if idx < len(r) and r[idx]:
-                    val = re.sub(r'[^0-9.\-]', '', r[idx].strip())
-                    if nm in ['Dengue NS1 Antigen', 'Dengue IgG', 'Dengue IgM']:
-                        if val and val not in ['.', '-']:
+                    val = re.sub(r"[^0-9.\-]", "", r[idx].strip())
+                    if nm in ["Dengue NS1 Antigen", "Dengue IgG", "Dengue IgM"]:
+                        if val and val not in [".", "-"]:
                             if d not in res[nm]:
                                 res[nm][d] = val
                                 logger.debug(f"  Extracted: {nm}[{d}] = {val}")
                             continue
-                    if val and val not in ['.', '-'] and is_value_plausible(nm, val):
+                    if val and val not in [".", "-"] and is_value_plausible(nm, val):
                         if d not in res[nm]:
                             res[nm][d] = val
                             logger.debug(f"  Extracted: {nm}[{d}] = {val}")
@@ -236,7 +259,7 @@ def func_table_smart(content, dates, logger):
 
 def func_line_pattern(content, dates, logger):
     res = defaultdict(dict)
-    pat = r'^(.+?)\s*[:]\s*(.+)$'
+    pat = r"^(.+?)\s*[:]\s*(.+)$"
     for p, line in content.lines:
         m = re.match(pat, line)
         if not m:
@@ -245,12 +268,12 @@ def func_line_pattern(content, dates, logger):
         val = m.group(2).strip()
         if nm:
             cl = None
-            if nm in ['Dengue NS1 Antigen', 'Dengue IgG', 'Dengue IgM']:
-                vm = re.search(r'(\d+\.?\d*)', val)
+            if nm in ["Dengue NS1 Antigen", "Dengue IgG", "Dengue IgM"]:
+                vm = re.search(r"(\d+\.?\d*)", val)
                 if vm:
                     cl = vm.group(1)
             else:
-                cl = re.sub(r'[^0-9.\-]', '', val)
+                cl = re.sub(r"[^0-9.\-]", "", val)
 
             if cl and dates and is_value_plausible(nm, cl):
                 if dates[0] not in res[nm]:
@@ -261,11 +284,13 @@ def func_line_pattern(content, dates, logger):
 
 def func_dengue_dedicated(content, dates, logger):
     res = defaultdict(dict)
-    pat_val = r'(\d+\.?\d*|Positive|Negative|Reactive|Non-?Reactive|Equivocal|Detected|Not\s+Detected)'
+    pat_val = (
+        r"(\d+\.?\d*|Positive|Negative|Reactive|Non-?Reactive|Equivocal|Detected|Not\s+Detected)"
+    )
     pats = {
-        'Dengue NS1 Antigen': r'Dengue\s+NS\s*1\s+Antigen\s+(?:[:\-]\s*)?' + pat_val,
-        'Dengue IgG': r'Dengue\s+IgG\s+(?:[:\-]\s*)?' + pat_val,
-        'Dengue IgM': r'Dengue\s+IgM\s+(?:[:\-]\s*)?' + pat_val
+        "Dengue NS1 Antigen": r"Dengue\s+NS\s*1\s+Antigen\s+(?:[:\-]\s*)?" + pat_val,
+        "Dengue IgG": r"Dengue\s+IgG\s+(?:[:\-]\s*)?" + pat_val,
+        "Dengue IgM": r"Dengue\s+IgM\s+(?:[:\-]\s*)?" + pat_val,
     }
     for nm, p in pats.items():
         for m in re.finditer(p, content.full_text, re.IGNORECASE):
@@ -274,14 +299,14 @@ def func_dengue_dedicated(content, dates, logger):
             if date and val:
                 # Validation logic
                 is_valid = False
-                if re.match(r'^[a-zA-Z\s\-]+$', val):
+                if re.match(r"^[a-zA-Z\s\-]+$", val):
                     is_valid = True
                 else:
                     try:
                         fv = float(val)
                         if 1900 < fv < 2100 and fv.is_integer():
-                            ctx = content.full_text[m.end():m.end() + 20].lower()
-                            if any(x in ctx for x in ['index', 's/co', 'ratio']):
+                            ctx = content.full_text[m.end() : m.end() + 20].lower()
+                            if any(x in ctx for x in ["index", "s/co", "ratio"]):
                                 is_valid = True
                         else:
                             is_valid = True
@@ -295,44 +320,44 @@ def func_dengue_dedicated(content, dates, logger):
 
 def extract_metadata(content, logger):
     txt = content.full_text
-    meta = {'MAX_id': None, 'SIN_No': None, 'Age': None, 'Gender': None}
+    meta = {"MAX_id": None, "SIN_No": None, "Age": None, "Gender": None}
 
     # MAX ID
     mps = [
-        r'(?:MaxID|Max\s+ID|Lab\s+ID)\s*[:/]\s*([A-Z]{3,5}\.\d+)',
-        r'\b([A-Z]{4}\.\d{6})\b',
-        r'(?:MaxID|Max\s+ID|Lab\s+ID)\s*[:/]\s*([A-Z]{2}\d+)',
+        r"(?:MaxID|Max\s+ID|Lab\s+ID)\s*[:/]\s*([A-Z]{3,5}\.\d+)",
+        r"\b([A-Z]{4}\.\d{6})\b",
+        r"(?:MaxID|Max\s+ID|Lab\s+ID)\s*[:/]\s*([A-Z]{2}\d+)",
     ]
     for p in mps:
         m = re.search(p, txt, re.IGNORECASE)
         if m:
-            meta['MAX_id'] = m.group(1).upper()
+            meta["MAX_id"] = m.group(1).upper()
             logger.info(f"Found MAX_id: {meta['MAX_id']}")
             break
-    if not meta['MAX_id']:
-        flm = re.search(r'([A-Z]{2,5}\.?\d{6,})', content.file_name, re.IGNORECASE)
+    if not meta["MAX_id"]:
+        flm = re.search(r"([A-Z]{2,5}\.?\d{6,})", content.file_name, re.IGNORECASE)
         if flm:
-            meta['MAX_id'] = flm.group(1).upper()
+            meta["MAX_id"] = flm.group(1).upper()
             logger.info(f"Found MAX_id in filename: {meta['MAX_id']}")
 
     # SIN
-    sps = [r'SIN\s+No\s*[:/]\s*([A-Z0-9]+)', r'SIN\s*[:/]\s*([A-Z0-9]+)']
+    sps = [r"SIN\s+No\s*[:/]\s*([A-Z0-9]+)", r"SIN\s*[:/]\s*([A-Z0-9]+)"]
     for p in sps:
         m = re.search(p, txt, re.IGNORECASE)
         if m:
-            meta['SIN_No'] = m.group(1).upper()
+            meta["SIN_No"] = m.group(1).upper()
             logger.info(f"Found SIN_No: {meta['SIN_No']}")
             break
 
     # Age/Gender
     agps = [
-        r'Age\s*/\s*Gender\s*[:/]\s*(\d+)\s*Y(?:.*?(\d+)\s*M)?.*?/\s*([MF])',
-        r'Age\s*[:/]\s*(\d+)(?:\s*Y.*?(\d+)\s*M)?.*?Gender\s*[:/]\s*([MF])',
-        r'(\d{1,3})\s*Y(?:.*?(\d+)\s*M)?.*?([MF])',
+        r"Age\s*/\s*Gender\s*[:/]\s*(\d+)\s*Y(?:.*?(\d+)\s*M)?.*?/\s*([MF])",
+        r"Age\s*[:/]\s*(\d+)(?:\s*Y.*?(\d+)\s*M)?.*?Gender\s*[:/]\s*([MF])",
+        r"(\d{1,3})\s*Y(?:.*?(\d+)\s*M)?.*?([MF])",
         # Handle cases where only months are listed (e.g. "9 Months / M")
-        r'Age\s*/\s*Gender\s*[:/]\s*(?:0\s*Y\s*)?(\d+)\s*Months?.*?/\s*([MF])',
-        r'Age\s*[:/]\s*(?:0\s*Y\s*)?(\d+)\s*Months?.*?Gender\s*[:/]\s*([MF])',
-        r'(?:0\s*Y\s*)?(\d{1,3})\s*Months?.*?([MF])',
+        r"Age\s*/\s*Gender\s*[:/]\s*(?:0\s*Y\s*)?(\d+)\s*Months?.*?/\s*([MF])",
+        r"Age\s*[:/]\s*(?:0\s*Y\s*)?(\d+)\s*Months?.*?Gender\s*[:/]\s*([MF])",
+        r"(?:0\s*Y\s*)?(\d{1,3})\s*Months?.*?([MF])",
     ]
     for p in agps:
         m = re.search(p, txt, re.IGNORECASE)
@@ -347,11 +372,11 @@ def extract_metadata(content, logger):
                 gender = m.group(2).upper()
 
             if years == 0 and months > 0:
-                meta['Age'] = f"{months} Months"
+                meta["Age"] = f"{months} Months"
             else:
-                meta['Age'] = str(years)
-                
-            meta['Gender'] = gender
+                meta["Age"] = str(years)
+
+            meta["Gender"] = gender
             logger.info(f"Found Age: {meta['Age']}, Gender: {meta['Gender']}")
             break
     return meta
@@ -359,21 +384,21 @@ def extract_metadata(content, logger):
 
 def determine_tests_done(row_data: Dict) -> str:
     has_lft = any(
-        row_data.get(t) and str(row_data.get(t)).lower() not in ['nil', 'nan', 'none', '', 'null']
+        row_data.get(t) and str(row_data.get(t)).lower() not in ["nil", "nan", "none", "", "null"]
         for t in LFT_TESTS
     )
     has_cbc = any(
-        row_data.get(t) and str(row_data.get(t)).lower() not in ['nil', 'nan', 'none', '', 'null']
+        row_data.get(t) and str(row_data.get(t)).lower() not in ["nil", "nan", "none", "", "null"]
         for t in CBC_TESTS
     )
 
-    dn = row_data.get('Dengue NS1 Antigen')
-    dg = row_data.get('Dengue IgG')
-    dm = row_data.get('Dengue IgM')
+    dn = row_data.get("Dengue NS1 Antigen")
+    dg = row_data.get("Dengue IgG")
+    dm = row_data.get("Dengue IgM")
 
-    hn = dn and str(dn).lower() not in ['nil', 'nan', 'none', '', 'null']
-    hg = dg and str(dg).lower() not in ['nil', 'nan', 'none', '', 'null']
-    hm = dm and str(dm).lower() not in ['nil', 'nan', 'none', '', 'null']
+    hn = dn and str(dn).lower() not in ["nil", "nan", "none", "", "null"]
+    hg = dg and str(dg).lower() not in ["nil", "nan", "none", "", "null"]
+    hm = dm and str(dm).lower() not in ["nil", "nan", "none", "", "null"]
     has_any = hn or hg or hm
 
     parts = []
@@ -405,4 +430,8 @@ def determine_tests_done(row_data: Dict) -> str:
     if len(parts) == 1:
         return f"{parts[0]} only" if "Dengue" in parts[0] else f"{parts[0]} Only"
     last = parts.pop()
-    return f"{', '.join(parts)} & {last} Tests" if "Dengue" in last else f"{', '.join(parts)} & {last} only"
+    return (
+        f"{', '.join(parts)} & {last} Tests"
+        if "Dengue" in last
+        else f"{', '.join(parts)} & {last} only"
+    )

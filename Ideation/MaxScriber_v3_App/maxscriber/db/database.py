@@ -1,22 +1,26 @@
-import json
 import datetime
+import json
 from typing import List, Optional
+
 # pyrefly: ignore [missing-import]
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
+
 class Template(Base):
-    __tablename__ = 'templates'
-    
+    __tablename__ = "templates"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     format_name = Column(String, nullable=False, unique=True)
     user_name = Column(String, nullable=False)
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
     signature_hash = Column(String, nullable=False)
     config_json = Column(Text, nullable=False)
+
 
 class DatabaseManager:
     def __init__(self, db_url: str = "sqlite:///maxscriber_registry.db"):
@@ -27,7 +31,9 @@ class DatabaseManager:
         """Creates the database schema if it doesn't exist."""
         Base.metadata.create_all(bind=self.engine)
 
-    def save_template(self, format_name: str, user_name: str, signature_hash: str, config_dict: dict) -> Template:
+    def save_template(
+        self, format_name: str, user_name: str, signature_hash: str, config_dict: dict
+    ) -> Template:
         """Saves a new template to the registry."""
         session = self.SessionLocal()
         try:
@@ -36,7 +42,7 @@ class DatabaseManager:
                 format_name=format_name,
                 user_name=user_name,
                 signature_hash=signature_hash,
-                config_json=config_json_str
+                config_json=config_json_str,
             )
             session.add(new_template)
             session.commit()
@@ -60,6 +66,7 @@ class DatabaseManager:
             return session.query(Template).filter(Template.format_name == format_name).first()
         finally:
             session.close()
+
 
 # Singleton instance for easy import across modules
 db_manager = DatabaseManager()
