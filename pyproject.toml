@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maxscriber"
+dynamic = ["version"]
+description = "Universal Medical PDF Extractor and Analyzer"
+readme = "README.md"
+authors = [
+    { name = "vaishnavpvarma", email = "vaishnavpvarma@example.com" }
+]
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.1.7",
+    "textual>=0.50.0",
+    "rich>=13.0.0",
+    "pdfplumber>=0.11.0",
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.0",
+    "fuzzywuzzy>=0.18.0",
+    "python-Levenshtein>=0.25.0",
+    "alive-progress>=3.1.5",
+    "pyyaml>=6.0.1",
+    "matplotlib>=3.8.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+maxscriber = "maxscriber.cli:main"
+
+[tool.hatch.version]
+path = "src/maxscriber/__init__.py"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "C90"]
+ignore = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

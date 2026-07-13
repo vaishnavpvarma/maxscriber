@@ -1,0 +1,49 @@
+name: MaxHospitals_Dengue
+version: "1.0"
+description: "SRL/Agilus Diagnostics - CBC, LFT, KFT, Dengue Serology"
+metadata:
+  Patient Name: '(?i)name[:\s]+(.*?)[\n\r]'
+  Age/Gender: '(?i)age\s*/\s*gender[:\s]+(.*?)[\n\r]'
+  Lab ID: '(?i)lab\s*id[:\s]+(.*?)[\n\r]'
+  Collection Date: '(?i)collection\s*date[:\s]+(.*?)[\n\r]'
+tests:
+  - Haemoglobin
+  - Packed Cell,Volume
+  - Total Leukocyte Count(TLC)
+  - RBC
+  - MCV
+  - MCH
+  - MCHC
+  - Platelet
+  - MPV
+  - RDW
+  - Neutrophils
+  - Lymphocytes
+  - Monocytes
+  - Eosinophils
+  - Basophils
+  - Absolute Neutrophil Count
+  - Absolute Lymphocyte Count
+  - Absolute Monocyte Count
+  - Absolute Eosinophil Count
+  - Absolute Basophil Count
+  - Total Protein
+  - Albumin
+  - Globulin
+  - A.G.
+  - Bilirubin (Total)
+  - Bilirubin (Direct)
+  - Bilirubin (Indirect)
+  - Transaminase (AST)
+  - Transaminase (ALT)
+  - Alkaline Phosphatase
+  - GGTP (Gamma GT), Serum
+  - Dengue NS1 Antigen
+  - Dengue IgG
+  - Dengue IgM
+  - Urea
+  - BUN
+  - Creatinine
+  - BUN_Creatinine_Ratio
+  - Uric_Acid
+  - eGFR

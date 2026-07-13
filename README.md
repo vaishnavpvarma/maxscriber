@@ -1,91 +1,71 @@
-# MaXScriber v1.0 🏎️
+# MaxScriber
 
-**Intelligent Multi-Pass Medical PDF Extractor**
-No AI/ML — Pure Rule-Based with Cross-Validation
+**MaxScriber** is a universal, adaptive pipeline for extracting, tabulating, and analyzing structured data from medical laboratory report PDFs. 
 
-> *coded with ❤️ by vaishnavpvarma*
+Built with clinical research in mind, MaxScriber replaces manual data entry with an intelligent, multi-pass extraction engine. Whether you're working with CBC, LFT, KFT, or Serology reports, MaxScriber can adapt to different hospital PDF formats and automatically export your data to Excel, alongside statistical summaries and distribution plots.
+
+## Key Features
+
+- 🏥 **Universal Adaptability:** Define new PDF extraction schemas using simple YAML files—no code changes required.
+- ⚡ **High Performance:** Parallel processing allows for rapid batch extraction of hundreds of PDFs.
+- 🔬 **Clinical Analytics:** Automatically generate descriptive statistics, data plots, and R scripts for your datasets.
+- 🖥️ **Beautiful CLI & TUI:** Features a modern, intuitive command-line interface powered by `Click` and `Textual`.
 
 ---
 
 ## Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/vaishnavpvarma/Max_Scriber_Tool_2_Repo.git
-   cd Max_Scriber_Tool_2_Repo
-   ```
+MaxScriber is packaged as a universal Python library, supporting all major package managers. Requires **Python 3.9+**.
 
-2. **Install in development mode:**
-   ```bash
-   pip install -e .
-   ```
+### Using `uv` (Recommended - Fastest)
+```bash
+uv pip install -e .
+```
 
-   This installs the `maxscriber` command globally.
+### Using `pip`
+```bash
+pip install -e .
+```
+
+### Using `Conda` / `Mamba`
+```bash
+conda env create -f environment.yml
+conda activate maxscriber-dev
+```
 
 ---
 
 ## Usage
 
-### Show Banner & Help
+MaxScriber comes with an intuitive CLI. 
 
+### Interactive TUI Wizard
+Run the tool without arguments to launch the interactive, full-screen terminal UI:
 ```bash
 maxscriber
-maxscriber -h
 ```
 
-### Full Pipeline (Transcribe → QC → Stats → Plot)
+### Headless CLI Execution
+You can bypass the TUI and run jobs directly from the command line:
 
 ```bash
-maxscriber run --input_dir <path_to_pdfs> --output_dir <path_to_output>
+# Run the complete pipeline using a saved schema
+maxscriber run --schema MaxHospitals_Dengue --input-dir ./my_pdfs --output-dir ./results
+
+# Run using a custom test list file
+maxscriber run --tests-file my_tests.txt --input-dir ./my_pdfs --output-dir ./results
+
+# Create a new schema from a batch of sample PDFs
+maxscriber schema create
 ```
 
-> Before executing, you'll be asked: *"Have you referred to the extraction.log file?"*
-> Answer **Yes** to proceed, or **No** to review logs first.
-
-### Individual Commands
-
-| Command | Description |
-|---------|-------------|
-| `maxscriber transcribe --input_dir <IN> --output_dir <OUT>` | PDF text extraction & test mapping |
-| `maxscriber qc --output_dir <OUT>` | Content hashing & duplicate detection |
-| `maxscriber stats --output_dir <OUT>` | Generate `Stats_Refined.txt` |
-| `maxscriber plot --output_dir <OUT>` | Generate clinical distribution graphs |
-
-> **Note:** `qc`, `stats`, and `plot` require a prior `transcribe` run (they load saved extraction data).
-
-### Per-Command Help
-
+### Get Help
 ```bash
-maxscriber run -h
-maxscriber transcribe -h
-maxscriber qc -h
-maxscriber stats -h
-maxscriber plot -h
+maxscriber --help
 ```
 
 ---
 
-## Output Files
+## License
 
-| File | Description |
-|------|-------------|
-| `Master_Data_Refined.xlsx` | Aggregated patient data in Excel |
-| `Stats_Refined.txt` | Statistical summary report |
-| `extraction.log` | Detailed extraction log for debugging |
-| `graphs/` | Clinical distribution histograms |
-| `extraction_data.pkl` | Intermediate data (for subcommand independence) |
-
----
-
-## Dependencies
-
-- `pdfplumber`
-- `openpyxl`
-- `pandas`
-- `fuzzywuzzy`
-- `python-Levenshtein`
-- `matplotlib`
-
----
-
-*SIMPLY LOVELY 😉 — Max Verstappen*
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

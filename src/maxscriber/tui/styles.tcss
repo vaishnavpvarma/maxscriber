@@ -1,0 +1,157 @@
+Screen {
+    background: #111820; /* Soft dark slate */
+    layout: vertical;
+    color: #c0d0d0;
+}
+
+#top-row {
+    height: 18;
+    layout: horizontal;
+}
+
+.panel {
+    border: round #3a5060; /* Muted soft grey-teal */
+    border-title-color: #40a0b0;
+    background: #18222c; /* Lighter dark-slate for depth */
+    color: #c0d0d0;
+    padding: 1;
+    margin: 1;
+}
+
+#banner-panel {
+    width: 3fr;
+}
+
+#stats-panel {
+    width: 2fr;
+}
+
+.stats-title {
+    color: #40a0b0;
+}
+.stats-max {
+    color: #608090;
+    text-align: left;
+}
+.wavy-chart {
+    height: 3;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.stats-bounds {
+    height: 1;
+}
+.stats-min {
+    width: 1fr;
+    color: #608090;
+    text-align: left;
+}
+.stats-current {
+    width: 1fr;
+    color: #608090;
+    text-align: right;
+}
+
+#bottom-row {
+    height: 1fr;
+    layout: horizontal;
+}
+
+#menu-panel {
+    width: 1fr;
+}
+
+.menu-btn {
+    width: 100%;
+    margin-bottom: 1;
+    text-style: bold;
+}
+
+/* Rounded pill-like appearance natively supported by Textual buttons, tweaked colors */
+.default-btn {
+    background: #1c2a35; /* Subtle dark translucent teal/grey */
+    color: #40e0d0;
+    border: none;
+}
+.default-btn:hover { background: #263845; }
+
+.primary-btn {
+    background: #20b2aa; /* Smooth modern teal */
+    color: #111820;
+    border: none;
+}
+.primary-btn:hover { background: #2bd4cb; }
+
+#schema-panel {
+    width: 3fr;
+    position: relative;
+}
+
+DataTable {
+    height: 1fr;
+    background: transparent;
+    color: #c0d0d0;
+}
+
+DataTable > .datatable--header {
+    background: transparent;
+    color: #40a0b0;
+    text-style: bold;
+}
+
+DataTable:focus > .datatable--cursor {
+    background: #263845; /* Subtle dark-grey/teal highlight */
+    color: auto;
+}
+
+#sparkle-icon {
+    dock: bottom;
+    text-align: right;
+    color: #40a0b0;
+    text-style: bold;
+    width: 100%;
+    padding-right: 2;
+}
+
+Footer {
+    background: transparent; /* Match global slate background */
+}
+
+Footer > .footer--key {
+    color: #40e0d0;
+}
+Footer > .footer--description {
+    color: #c0d0d0;
+}
+
+/* Modal Styling */
+ModalScreen {
+    align: center middle;
+    background: #111820 80%;
+}
+
+#dialog {
+    width: 60;
+    height: auto;
+    border: round #40a0b0;
+    background: #18222c;
+    padding: 1 2;
+}
+
+#dialog-title {
+    text-style: bold;
+    color: #40a0b0;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+.dialog-input {
+    margin-bottom: 1;
+    background: #1c2a35;
+    border: solid #3a5060;
+    color: #c0d0d0;
+}
+
+.dialog-input:focus {
+    border: solid #40e0d0;
+}

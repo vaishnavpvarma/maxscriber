@@ -1,0 +1,42 @@
+package:
+  name: maxscriber
+  version: "0.1.0"
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  script: "{{ PYTHON }} -m pip install . -vv"
+  entry_points:
+    - maxscriber = maxscriber.cli:main
+
+requirements:
+  host:
+    - python >=3.9
+    - pip
+    - hatchling
+  run:
+    - python >=3.9
+    - click >=8.1.7
+    - textual >=0.50.0
+    - rich >=13.0.0
+    - pdfplumber >=0.11.0
+    - pandas >=2.0.0
+    - openpyxl >=3.1.0
+    - fuzzywuzzy >=0.18.0
+    - python-levenshtein >=0.25.0
+    - alive-progress >=3.1.5
+    - pyyaml >=6.0.1
+    - matplotlib >=3.8.0
+
+test:
+  imports:
+    - maxscriber
+  commands:
+    - maxscriber --help
+
+about:
+  home: https://github.com/vaishnavpvarma/maxscriber
+  summary: "Universal Medical PDF Extractor and Analyzer"
+  license: MIT

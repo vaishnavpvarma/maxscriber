@@ -1,0 +1,23 @@
+name: maxscriber-dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.9
+  - pip
+  - click>=8.1.7
+  - textual>=0.50.0
+  - rich>=13.0.0
+  - pdfplumber>=0.11.0
+  - pandas>=2.0.0
+  - openpyxl>=3.1.0
+  - fuzzywuzzy>=0.18.0
+  - python-levenshtein>=0.25.0
+  - alive-progress>=3.1.5
+  - pyyaml>=6.0.1
+  - matplotlib>=3.8.0
+  - hatchling
+  - pytest
+  - ruff
+  - pip:
+      - -e .

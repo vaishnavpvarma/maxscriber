@@ -1,7 +1,9 @@
 import json
 import datetime
 from typing import List, Optional
+# pyrefly: ignore [missing-import]
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()

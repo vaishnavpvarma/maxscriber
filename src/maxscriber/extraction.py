@@ -212,43 +212,70 @@ def find_closest_date(pos: int, text: str, dates: List[str]) -> Optional[str]:
 
 def func_table_smart(content, dates, logger):
     res = defaultdict(dict)
+    
     for p, table in content.tables:
-        if len(table) < 2:
-            continue
-        header = table[0]
+            
         date_cols = {}
-        for idx, cell in enumerate(header):
-            if cell:
-                ds = extract_all_dates(cell)
+        
+        for row in table:
+            if not row:
+                continue
+                
+            # Reset date_cols if new header
+            row_has_keywords = False
+            for idx, cell in enumerate(row):
+                if not cell: continue
+                s = str(cell).strip()
+                if any(k in s for k in ['Date', 'Result', 'Unit', 'Bio Ref']):
+                    row_has_keywords = True
+                    break
+                    
+            if row_has_keywords:
+                date_cols = {}
+                
+            is_header = False
+            for idx, cell in enumerate(row):
+                if not cell: continue
+                s = str(cell).strip()
+                if any(k in s for k in ['Date', 'Result', 'Unit']):
+                    is_header = True
+                ds = extract_all_dates(s)
                 for d in ds:
                     nd = normalize_date(d)
                     if nd:
-                        date_cols[idx] = nd
-                        break
-        if not date_cols and dates:
-            for idx in range(1, min(len(header), len(dates) + 1)):
-                if idx - 1 < len(dates):
-                    date_cols[idx] = dates[idx - 1]
-
-        for r in table[1:]:
-            if not r or not r[0]:
+                        if len(s) < 50:
+                            date_cols[idx] = nd
+                            is_header = True
+                            break
+            
+            if is_header:
+                if not date_cols and dates:
+                    for idx in range(1, min(len(row), len(dates) + 1)):
+                        if idx - 1 < len(dates):
+                            date_cols[idx] = dates[idx - 1]
                 continue
-            nm = fuzzy_match_test_name(r[0].split('\n')[0])
+                
+            if not row[0]:
+                continue
+                
+            nm = fuzzy_match_test_name(str(row[0]).split('\n')[0])
             if not nm:
                 continue
-            for idx, d in date_cols.items():
-                if idx < len(r) and r[idx]:
-                    val = re.sub(r'[^0-9.\-]', '', r[idx].strip())
+                
+            for idx, d_col in date_cols.items():
+                if idx < len(row) and row[idx]:
+                    val = re.sub(r'[^0-9.\-]', '', str(row[idx]).strip())
                     if nm in ['Dengue NS1 Antigen', 'Dengue IgG', 'Dengue IgM']:
                         if val and val not in ['.', '-']:
-                            if d not in res[nm]:
-                                res[nm][d] = val
-                                logger.debug(f"  Extracted: {nm}[{d}] = {val}")
+                            if d_col not in res[nm]:
+                                res[nm][d_col] = val
+                                logger.debug(f"  Extracted: {nm}[{d_col}] = {val}")
                             continue
                     if val and val not in ['.', '-'] and is_value_plausible(nm, val):
-                        if d not in res[nm]:
-                            res[nm][d] = val
-                            logger.debug(f"  Extracted: {nm}[{d}] = {val}")
+                        if d_col not in res[nm]:
+                            res[nm][d_col] = val
+                            logger.debug(f"  Extracted: {nm}[{d_col}] = {val}")
+
     return dict(res)
 
 
@@ -311,9 +338,9 @@ def func_dengue_dedicated(content, dates, logger):
     return dict(res)
 
 
-def extract_metadata(content, logger):
+def extract_metadata(content, logger, pattern='2024_2025'):
     txt = content.full_text
-    meta = {'MAX_id': None, 'SIN_No': None, 'Age': None, 'Gender': None, 'Centre': None}
+    meta = {'MAX_id': None, 'SIN_No': None, 'Age': None, 'Gender': None, 'Centre': None, 'Location_ID': '-', 'Location': '-'}
 
     # MAX ID
     mps = [
@@ -342,23 +369,38 @@ def extract_metadata(content, logger):
             logger.info(f"Found SIN_No: {meta['SIN_No']}")
             break
 
-    # Centre — the lab/collection centre label in the report header.
-    # Format: "Centre : 3143 - Max Lab Vasundhara Sector 1"  (after the colon)
-    # We capture only the name part after the numeric code (if present).
-    centre_patterns = [
-        r'Centre\s*[:/]\s*(?:\d+\s*-\s*)?(.+?)(?:OP/IP|Collection|Ref\s*Doctor|$)',
-        r'Centre\s*[:/]\s*(.+?)\n',
-    ]
-    for cp in centre_patterns:
-        cm = re.search(cp, txt, re.IGNORECASE)
+    if pattern == '2023':
+        # 2023 Pattern: Distinctly capture Location ID and Location Name
+        cp_2023 = r'Centre\s*[:/]\s*(?:(\d+)\s*-\s*)?(.+?)(?:OP/IP|Collection|Ref\s*Doctor|\n|$)'
+        cm = re.search(cp_2023, txt, re.IGNORECASE)
         if cm:
-            centre_raw = cm.group(1).strip()
-            # Remove trailing noise tokens
-            centre_raw = re.split(r'\s{2,}|\t', centre_raw)[0].strip()
-            if centre_raw and len(centre_raw) > 2:
-                meta['Centre'] = centre_raw
-                logger.info(f"Found Centre: {meta['Centre']}")
-                break
+            loc_id = cm.group(1)
+            loc_name = cm.group(2)
+            
+            if loc_name:
+                loc_name = loc_name.strip()
+                loc_name = re.split(r'\s{2,}|\t', loc_name)[0].strip()
+                if len(loc_name) > 2:
+                    meta['Location'] = loc_name
+                    meta['Location_ID'] = loc_id.strip() if loc_id else '-'
+                    meta['Centre'] = meta['Location'] # Fallback
+                    logger.info(f"Found Location ID: {meta['Location_ID']}, Location: {meta['Location']}")
+    else:
+        # 2024_2025 (Legacy) Pattern: Capture only Centre name
+        centre_patterns = [
+            r'Centre\s*[:/]\s*(?:\d+\s*-\s*)?(.+?)(?:OP/IP|Collection|Ref\s*Doctor|$)',
+            r'Centre\s*[:/]\s*(.+?)\n',
+        ]
+        for cp in centre_patterns:
+            cm = re.search(cp, txt, re.IGNORECASE)
+            if cm:
+                centre_raw = cm.group(1).strip()
+                # Remove trailing noise tokens
+                centre_raw = re.split(r'\s{2,}|\t', centre_raw)[0].strip()
+                if centre_raw and len(centre_raw) > 2:
+                    meta['Centre'] = centre_raw
+                    logger.info(f"Found Centre: {meta['Centre']}")
+                    break
 
     # Age/Gender
     agps = [
@@ -395,57 +437,73 @@ def func_kft_table(content, dates, logger):
     unit_store = defaultdict(dict)     # canonical_name -> {date: unit}  — for the pipeline
 
     for _page, table in content.tables:
-        if len(table) < 2:
-            continue
-
-        # --- Detect unit column index from header ---
-        header = table[0]
+            
         unit_col = -1
         date_cols = {}
-        for idx, cell in enumerate(header):
-            if not cell:
-                continue
-            cell_s = str(cell).strip()
-            if 'Unit' in cell_s:
-                unit_col = idx
-            # Date columns
-            ds = extract_all_dates(cell_s)
-            for d in ds:
-                nd = normalize_date(d)
-                if nd:
-                    date_cols[idx] = nd
-                    break
-
-        # Fallback: assign available dates to columns sequentially
-        if not date_cols and dates:
-            for idx in range(1, min(len(header), len(dates) + 1)):
-                if idx - 1 < len(dates):
-                    date_cols[idx] = dates[idx - 1]
-
-        # Use first date if still none from columns
         fallback_date = dates[0] if dates else None
-
-        for row in table[1:]:
-            if not row or not row[0]:
+        
+        for row in table:
+            if not row:
                 continue
-
+                
+            # Check if this row is a header
+            row_has_keywords = False
+            for idx, cell in enumerate(row):
+                if not cell: continue
+                s = str(cell).strip()
+                if any(k in s for k in ['Date', 'Result', 'Unit', 'Bio Ref']):
+                    row_has_keywords = True
+                    break
+            
+            if row_has_keywords:
+                date_cols = {}
+                unit_col = -1
+                
+            is_header = False
+            for idx, cell in enumerate(row):
+                if not cell: continue
+                s = str(cell).strip()
+                if any(k in s for k in ['Date', 'Result', 'Unit']):
+                    is_header = True
+                    if 'Unit' in s:
+                        unit_col = idx
+                ds = extract_all_dates(s)
+                for d in ds:
+                    nd = normalize_date(d)
+                    if nd:
+                        # Prevent long demographics blocks from being treated as date columns
+                        if len(s) < 50:
+                            date_cols[idx] = nd
+                            is_header = True
+                            break
+            
+            if is_header:
+                if not date_cols and dates:
+                    for idx in range(1, min(len(row), len(dates) + 1)):
+                        if idx - 1 < len(dates):
+                            date_cols[idx] = dates[idx - 1]
+                continue
+                
+            if not row[0]:
+                continue
+                
             cell0 = str(row[0]).replace('\n', ' ').strip()
-
+            
             # Noise filter — skip reference / comment blocks
             if _is_noise_line(cell0):
                 continue
-
+                
             # Match canonical test name
             nm = fuzzy_match_test_name(cell0.split('\n')[0])
             if not nm or nm not in KFT_TESTS:
                 continue
-
+                
             # --- Determine unit ---
             raw_unit = None
             if unit_col != -1 and unit_col < len(row):
                 raw_unit = str(row[unit_col]).strip() if row[unit_col] else None
             unit = normalize_unit(raw_unit) or KFT_DEFAULT_UNITS.get(nm)
-
+            
             # --- Extract value per date column ---
             if date_cols:
                 for col_idx, col_date in date_cols.items():
@@ -482,6 +540,10 @@ def determine_tests_done(row_data: Dict) -> str:
         row_data.get(t) and str(row_data.get(t)).lower() not in ['nil', 'nan', 'none', '', 'null']
         for t in CBC_TESTS
     )
+    has_kft = any(
+        row_data.get(t) and str(row_data.get(t)).lower() not in ['nil', 'nan', 'none', '', 'null']
+        for t in KFT_TESTS
+    )
 
     dn = row_data.get('Dengue NS1 Antigen')
     dg = row_data.get('Dengue IgG')
@@ -497,6 +559,8 @@ def determine_tests_done(row_data: Dict) -> str:
         parts.append("CBC")
     if has_lft:
         parts.append("LFT")
+    if has_kft:
+        parts.append("KFT")
     if has_any:
         if hn and hg and hm:
             dl = "Dengue NS1, IgG & IgM"

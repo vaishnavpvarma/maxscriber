@@ -19,13 +19,14 @@ def generate_clinical_plots(
     metadata_map: Dict,
     output_dir: Path,
     logger: logging.Logger,
+    job_name: str = 'default',
 ):
     """Generate clinical distribution plots (age, Hb, platelet)."""
     if not HAS_MATPLOTLIB:
         logger.warning("Matplotlib not installed. Skipping plots.")
         return
 
-    graphs_dir = output_dir / 'graphs'
+    graphs_dir = output_dir / f'{job_name}_graphs'
     graphs_dir.mkdir(exist_ok=True)
 
     # Prepare Data
@@ -63,7 +64,7 @@ def generate_clinical_plots(
         plt.title('Patient Age Distribution')
         plt.xlabel('Age (Years)')
         plt.ylabel('Count')
-        plt.savefig(graphs_dir / 'Age_Distribution.png')
+        plt.savefig(graphs_dir / f'{job_name}_Age_Distribution.png')
         plt.close()
 
     # 2. Haemoglobin by Gender
@@ -76,7 +77,7 @@ def generate_clinical_plots(
         plt.title('Haemoglobin Distribution by Gender')
         plt.xlabel('Haemoglobin (g/dL)')
         plt.legend()
-        plt.savefig(graphs_dir / 'Hb_Distribution.png')
+        plt.savefig(graphs_dir / f'{job_name}_Hb_Distribution.png')
         plt.close()
 
     # 3. Platelet Counts
@@ -88,7 +89,7 @@ def generate_clinical_plots(
         )
         plt.title('Platelet Count Distribution')
         plt.xlabel('Platelets (/cmm)')
-        plt.savefig(graphs_dir / 'Platelet_Distribution.png')
+        plt.savefig(graphs_dir / f'{job_name}_Platelet_Distribution.png')
         plt.close()
 
     logger.info(f"Generated plots in {graphs_dir}")
