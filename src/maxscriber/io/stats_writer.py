@@ -405,8 +405,6 @@ def generate_condensed_stats(
             for mid, overlap_files in drift_ids:
                 logger.critical(f"  {mid}: duplicate files = {', '.join(overlap_files)}")
 
-    # lgtm[py/cleartext-storage-sensitive-data]
-    # codeql[py/cleartext-storage-sensitive-data]
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(stats))
+        f.write("\n".join(stats))  # codeql[py/cleartext-storage-sensitive-data]  # lgtm[py/cleartext-storage-sensitive-data]
     logger.info(f"Stats Report saved: {output_path}")
