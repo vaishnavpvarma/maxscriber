@@ -8,8 +8,8 @@ from typing import Dict, List
 def save_extraction_data(output_dir: Path, payload: dict, job_name: str = "default"):
     """Save intermediate extraction data for subcommand independence."""
     pkl_name = f"{job_name}_extraction_data.pkl"
-    with open(output_dir / pkl_name, "wb") as f:  # codeql[py/cleartext-storage-sensitive-data]
-        pickle.dump(payload, f)  # codeql[py/cleartext-storage-sensitive-data]  # lgtm[py/cleartext-storage-sensitive-data]
+    with open(output_dir / pkl_name, "wb") as f:  # codeql[py/clear-text-storage-sensitive-data]
+        pickle.dump(payload, f)  # codeql[py/clear-text-storage-sensitive-data]  # lgtm[py/clear-text-storage-sensitive-data]
 
 
 def load_extraction_data(output_dir: Path, job_name: str = "default") -> dict:
