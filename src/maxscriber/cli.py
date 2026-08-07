@@ -1,5 +1,5 @@
 """
-MaXScriber v2.0
+MaXScriber v0.1.0
 CLI entry point using Click and Textual.
 """
 
@@ -73,7 +73,7 @@ from maxscriber.tui.app import run_tui
 @click.version_option(version=__version__, prog_name="MaxScriber")
 @click.pass_context
 def main(ctx):
-    """MaXScriber v2.0 | Universal Medical PDF Extractor"""
+    """MaXScriber v0.1.0 | Universal Medical PDF Extractor"""
     try:
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
@@ -190,16 +190,68 @@ def schema():
     pass
 
 
-@schema.command()
-def list():
-    """List all saved schemas"""
-    click.echo("Listing schemas... (to be implemented in Phase 3)")
+@schema.command(name="list")
+def list_schemas():
+    """List all registered schemas"""
+    from rich.console import Console
+    from rich.table import Table
+    from maxscriber.core.schema import SchemaManager
+    console = Console()
+    sm = SchemaManager()
+    schemas = sm.get_all_schemas()
+
+    if not schemas:
+        click.echo("No schemas found.")
+        return
+
+    table = Table(title="Available MaxScriber Schemas", border_style="cyan")
+    table.add_column("Name", style="bold white")
+    table.add_column("Tests Count", style="yellow")
+    table.add_column("Description", style="dim white")
+
+    for s in schemas:
+        table.add_row(s.get("name", "Unknown"), str(s.get("tests_count", 0)), s.get("description", ""))
+
+    console.print(table)
 
 
-@schema.command()
-def create():
-    """Launch schema creation wizard"""
-    click.echo("Schema creation wizard... (to be implemented in Phase 3)")
+@schema.command(name="import")
+@click.argument("filepath", type=click.Path(exists=True, dir_okay=False))
+def import_schema(filepath):
+    """Import a YAML schema file into MaxScriber"""
+    from maxscriber.core.schema import SchemaManager
+    sm = SchemaManager()
+    try:
+        name = sm.import_schema_file(Path(filepath))
+        console.print(f"[bold green]✓ Successfully imported schema '{name}'![/bold green]")
+        console.print(f"You can now run extraction with: [cyan]maxscriber run --schema {name} ...[/cyan]")
+    except Exception as e:
+        console.print(f"[bold red]Failed to import schema: {e}[/bold red]")
+
+
+@schema.command(name="open")
+def open_schema_folder():
+    """Open the schema folder in system file explorer"""
+    from maxscriber.core.schema import SchemaManager
+    import subprocess
+    import platform
+
+    sm = SchemaManager()
+    folder = sm.base_dir
+    folder.mkdir(parents=True, exist_ok=True)
+
+    console.print(f"Opening schema directory: [cyan]{folder}[/cyan]")
+    system_name = platform.system().lower()
+    try:
+        if "windows" in system_name or os.name == "nt":
+            os.startfile(str(folder))
+        elif "darwin" in system_name:
+            subprocess.run(["open", str(folder)])
+        else:
+            # Linux / WSL
+            subprocess.run(["xdg-open", str(folder)])
+    except Exception as e:
+        console.print(f"[yellow]Could not automatically open GUI folder ({e}). Directory path is: {folder}[/yellow]")
 
 
 if __name__ == "__main__":

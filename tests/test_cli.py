@@ -7,7 +7,7 @@ def test_cli_help():
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    assert "MaXScriber v2.0 | Universal Medical PDF Extractor" in result.output
+    assert "MaXScriber v0.1.0 | Universal Medical PDF Extractor" in result.output
     assert "run" in result.output
     assert "schema" in result.output
 

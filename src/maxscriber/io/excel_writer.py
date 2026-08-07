@@ -147,6 +147,58 @@ def generate_excel_report(
     m_map = data["m_map"]
     longitudinal_tests = data.get("longitudinal_tests", {})
 
+    template_columns = [
+        "MAX_id",
+        "Location ID",
+        "Location ",
+        "File Name",
+        "Tests Done",
+        "SIN No.",
+        "Gender",
+        "Age",
+        "Collection_date",
+        "Haemoglobin",
+        "Packed Cell,Volume",
+        "Total Leukocyte Count(TLC)",
+        "RBC",
+        "MCV",
+        "MCH",
+        "MCHC",
+        "Platelet",
+        "MPV",
+        "RDW",
+        "Neutrophils",
+        "Lymphocytes",
+        "Monocytes",
+        "Eosinophils",
+        "Basophils",
+        "Absolute Neutrophil Count",
+        "Absolute Lymphocyte Count",
+        "Absolute Monocyte Count",
+        "Absolute Eosinophil Count",
+        "Absolute Basophil Count",
+        "Total Protein",
+        "Albumin",
+        "Globulin",
+        "A.G.",
+        "Bilirubin (Total)",
+        "Bilirubin (Direct)",
+        "Bilirubin (Indirect)",
+        "Transaminase (AST)",
+        "Transaminase (ALT)",
+        "Alkaline Phosphatase",
+        "GGTP (Gamma GT), Serum",
+        "Dengue NS1 Antigen",
+        "Dengue IgG",
+        "Dengue IgM",
+        "Urea",
+        "BUN",
+        "Creatinine",
+        "BUN_Creatinine_Ratio",
+        "Uric_Acid",
+        "eGFR",
+    ]
+
     rows = []
     sorted_mids = sorted(latest_data.keys())
 
@@ -175,85 +227,38 @@ def generate_excel_report(
             row[f"{c}_Unit"] = unit_val
         rows.append(row)
 
-    df = pd.DataFrame(rows)
-
-    if pattern == "2023":
-        template_columns = [
-            "MAX_id",
-            "Location ID",
-            "Location ",
-            "File Name",
-            "Tests Done",
-            "SIN No.",
-            "Gender",
-            "Age",
-            "Collection_date",
-            "Haemoglobin",
-            "Packed Cell,Volume",
-            "Total Leukocyte Count(TLC)",
-            "RBC",
-            "MCV",
-            "MCH",
-            "MCHC",
-            "Platelet",
-            "MPV",
-            "RDW",
-            "Neutrophils",
-            "Lymphocytes",
-            "Monocytes",
-            "Eosinophils",
-            "Basophils",
-            "Absolute Neutrophil Count",
-            "Absolute Lymphocyte Count",
-            "Absolute Monocyte Count",
-            "Absolute Eosinophil Count",
-            "Absolute Basophil Count",
-            "Total Protein",
-            "Albumin",
-            "Globulin",
-            "A.G.",
-            "Bilirubin (Total)",
-            "Bilirubin (Direct)",
-            "Bilirubin (Indirect)",
-            "Transaminase (AST)",
-            "Transaminase (ALT)",
-            "Alkaline Phosphatase",
-            "GGTP (Gamma GT), Serum",
-            "Dengue NS1 Antigen",
-            "Dengue IgG",
-            "Dengue IgM",
-            "Urea",
-            "BUN",
-            "Creatinine",
-            "BUN_Creatinine_Ratio",
-            "Uric_Acid",
-            "eGFR",
-        ]
-
-        metadata_cols = [
-            "MAX_id",
-            "Location ID",
-            "Location ",
-            "File Name",
-            "Tests Done",
-            "SIN No.",
-            "Gender",
-            "Age",
-            "Collection_date",
-        ]
-        test_cols_in_template = [c for c in template_columns if c not in metadata_cols]
-
-        valid_test_cols = []
-        for col in test_cols_in_template:
-            if col in df.columns:
-                if not (df[col] == "nil").all():
-                    valid_test_cols.append(col)
-
-        final_cols = metadata_cols + valid_test_cols
-        df = df[final_cols]
+    if not rows:
+        logger.warning("No valid patient data extracted from PDFs.")
+        cols = [c for c in template_columns] if pattern == "2023" else [c for c in OUTPUT_COLUMNS if not c.endswith("_Unit")]
+        df = pd.DataFrame(columns=cols)
     else:
-        legacy_cols = [c for c in OUTPUT_COLUMNS if not c.endswith("_Unit")]
-        df = df[legacy_cols]
+        df = pd.DataFrame(rows)
+
+        if pattern == "2023":
+            metadata_cols = [
+                "MAX_id",
+                "Location ID",
+                "Location ",
+                "File Name",
+                "Tests Done",
+                "SIN No.",
+                "Gender",
+                "Age",
+                "Collection_date",
+            ]
+            test_cols_in_template = [c for c in template_columns if c not in metadata_cols]
+
+            valid_test_cols = []
+            for col in test_cols_in_template:
+                if col in df.columns:
+                    if not (df[col] == "nil").all():
+                        valid_test_cols.append(col)
+
+            final_cols = metadata_cols + valid_test_cols
+            df = df[final_cols]
+        else:
+            legacy_cols = [c for c in OUTPUT_COLUMNS if not c.endswith("_Unit")]
+            df = df[legacy_cols]
 
     xlsx_path = output_dir / f"{job_name}_Master_Data_Refined.xlsx"
 

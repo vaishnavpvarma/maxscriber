@@ -1,5 +1,5 @@
 """
-MaXScriber v1.0
+MaXScriber v0.1.0
 PDF content extraction, helpers, and multi-pass strategies.
 """
 
@@ -665,6 +665,31 @@ class AdaptiveExtractor:
         for key, pattern in self.metadata_patterns.items():
             match = re.search(pattern, text, re.IGNORECASE)
             results[key] = match.group(1).strip() if match else "nil"
+
+        # Normalize MAX_id fallback
+        if results.get("MAX_id") == "nil":
+            for fallback in ["Lab ID", "Patient ID", "UHID", "SIN No."]:
+                if results.get(fallback) and results.get(fallback) != "nil":
+                    results["MAX_id"] = results[fallback]
+                    break
+
+        # Parse Age & Gender from Age/Gender string
+        age_gender = results.get("Age/Gender")
+        if age_gender and age_gender != "nil":
+            parts = re.split(r"[/\,\&]", age_gender)
+            if len(parts) >= 2:
+                age_match = re.search(r"\d+", parts[0])
+                gender_match = re.search(r"(male|female|m|f)", parts[1], re.IGNORECASE)
+                if age_match and results.get("Age") == "nil":
+                    results["Age"] = age_match.group()
+                if gender_match and results.get("Gender") == "nil":
+                    g = gender_match.group().upper()
+                    results["Gender"] = "Male" if g in ["M", "MALE"] else ("Female" if g in ["F", "FEMALE"] else g)
+            elif results.get("Age") == "nil":
+                age_match = re.search(r"\b\d{1,3}\b", age_gender)
+                if age_match:
+                    results["Age"] = age_match.group()
+
         return results
 
     def _fuzzy_match_test(self, candidate: str, threshold: float = 85.0) -> str:

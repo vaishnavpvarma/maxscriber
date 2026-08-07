@@ -5,7 +5,7 @@ from maxscriber.tui.screens import MainScreen
 
 class MaxScriberApp(App):
     """
-    MaxScriber v2.0 Sci-Fi Terminal Workspace.
+    MaxScriber v0.1.0 Sci-Fi Terminal Workspace.
     """
 
     CSS_PATH = "styles.tcss"

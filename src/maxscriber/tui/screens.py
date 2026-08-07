@@ -58,7 +58,7 @@ class MainScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.app.title = "MaxScriber v2.0 | Sci-Fi Terminal Workspace"
+        self.app.title = "MaxScriber v0.1.0 | Sci-Fi Terminal Workspace"
         self._load_schema_registry()
 
     def _load_schema_registry(self):

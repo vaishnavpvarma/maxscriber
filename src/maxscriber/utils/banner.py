@@ -1,5 +1,5 @@
 """
-MaXScriber v1.0
+MaXScriber v0.1.0
 Branding and display utilities.
 """
 

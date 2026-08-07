@@ -1,5 +1,5 @@
 """
-MaXScriber v1.0 - Eau Rouge Edition
+MaXScriber v0.1.0 - Eau Rouge Edition
 Clinical distribution graph generation.
 """
 
