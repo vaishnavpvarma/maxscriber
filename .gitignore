@@ -73,3 +73,9 @@ temp/
 
 # Sphinx build files
 docs/_build/
+
+# Scratch & experimental folders
+Ideation/
+orphans/
+*_v3/
+*_v3_App/
